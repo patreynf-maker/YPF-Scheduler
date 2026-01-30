@@ -1,0 +1,120 @@
+window.App = window.App || {};
+
+App.assignTasksForMonth = function (year, month) {
+    const state = App.store.state;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Get Playa employees for current org
+    const employees = state.employees.filter(e =>
+        e.organization === state.currentOrg &&
+        e.category === App.CATEGORIES.PLAYA
+    );
+
+    const monthKey = `${year}-${month}`;
+    if (!state.tasks[monthKey]) state.tasks[monthKey] = {};
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        App.assignDailyTasks(d, monthKey, employees, state.shifts[monthKey]);
+    }
+
+    App.store.emitChange();
+    alert("Tareas asignadas exitosamente para todo el mes.");
+};
+
+App.assignDailyTasks = function (day, monthKey, employees, monthlyShifts) {
+    if (!monthlyShifts) return;
+
+    // Build list of employees working this day (exclude franco, certificado medico, asiduidad)
+    let candidates = [];
+    employees.forEach(emp => {
+        const shiftCode = monthlyShifts[emp.id]?.[day];
+        if (App.isWorkingShift(shiftCode)) {
+            candidates.push({ id: emp.id, shift: shiftCode });
+        }
+    });
+
+    if (candidates.length === 0) return;
+
+    let dailyAssignments = {};
+
+    // Rule 1: Cada día debe tener solo un nro 4, en el horario de "22 a 06"
+    const pool2206 = candidates.filter(c => c.shift === '22-06' && !dailyAssignments[c.id]);
+    if (pool2206.length > 0) {
+        const chosen = App.pickRandom(pool2206);
+        dailyAssignments[chosen.id] = 4;
+    }
+
+    // Rule 2: Cada día debe tener dos números 3, en "16 a 00" y "08 a 16"
+    const pool1600 = candidates.filter(c => c.shift === '16-00' && !dailyAssignments[c.id]);
+    if (pool1600.length > 0) {
+        const chosen = App.pickRandom(pool1600);
+        dailyAssignments[chosen.id] = 3;
+    }
+
+    const pool0816 = candidates.filter(c => c.shift === '08-16' && !dailyAssignments[c.id]);
+    if (pool0816.length > 0) {
+        const chosen = App.pickRandom(pool0816);
+        dailyAssignments[chosen.id] = 3;
+    }
+
+    // Rule 3 & 4: Al menos un nro 1 y al menos un nro 2 al día
+    // Get remaining unassigned employees
+    const remaining = candidates.filter(c => !dailyAssignments[c.id]);
+
+    if (remaining.length > 0) {
+        // Create a bag of task numbers ensuring at least one 1 and one 2
+        let taskBag = [];
+
+        if (remaining.length >= 2) {
+            // Ensure at least one 1 and one 2
+            taskBag.push(1);
+            taskBag.push(2);
+
+            // Fill the rest with random 1s and 2s
+            for (let i = 2; i < remaining.length; i++) {
+                taskBag.push(Math.random() > 0.5 ? 1 : 2);
+            }
+        } else if (remaining.length === 1) {
+            // Only one person left, assign either 1 or 2
+            taskBag.push(Math.random() > 0.5 ? 1 : 2);
+        }
+
+        // Shuffle the bag
+        taskBag = taskBag.sort(() => Math.random() - 0.5);
+
+        // Assign tasks from the bag to remaining employees
+        remaining.forEach((cand, idx) => {
+            dailyAssignments[cand.id] = taskBag[idx];
+        });
+    }
+
+    // Save all assignments for this day
+    const state = App.store.state;
+    Object.keys(dailyAssignments).forEach(empId => {
+        if (!state.tasks[monthKey][empId]) state.tasks[monthKey][empId] = {};
+        state.tasks[monthKey][empId][day] = dailyAssignments[empId];
+    });
+};
+
+App.isWorkingShift = function (code) {
+    if (!code) return false;
+
+    // Normalize code to uppercase for comparison
+    const normalizedCode = code.toUpperCase();
+
+    // List of non-working shift codes (franco, certificado medico, asiduidad, etc.)
+    const nonWorkingKeywords = ['FRANCO', 'ASIDUIDAD', 'SUSPENSION', 'MEDICO', 'CERTIFICADO'];
+
+    // Check if the shift code contains any non-working keywords
+    for (let keyword of nonWorkingKeywords) {
+        if (normalizedCode.includes(keyword)) {
+            return false;
+        }
+    }
+
+    return true;
+};
+
+App.pickRandom = function (array) {
+    return array[Math.floor(Math.random() * array.length)];
+};

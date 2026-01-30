@@ -1,0 +1,103 @@
+:root {
+    /* YPF Colors - Exact from reference */
+    --ypf-header-blue: #003D82;
+    --ypf-blue-dark: #0033A0;
+    --ypf-blue-light: #00A9E0;
+    --ypf-yellow: #FFD100;
+    --ypf-grey-dark: #333333;
+    --ypf-grey-medium: #666666;
+    --ypf-grey-light: #E8E8E8;
+    --ypf-background: #F5F7FA;
+    --white: #FFFFFF;
+    --black: #000000;
+    --error: #D32F2F;
+    --success: #2E7D32;
+
+    /* Shift Colors - Matched from reference screenshots */
+    --shift-14-22: #2196F3;
+    /* Blue - 14 A 22 */
+    --shift-06-14: #FF9800;
+    /* Orange - 06 A 14 */
+    --shift-22-06: #1A237E;
+    /* Dark Navy - 22 A 06 */
+    --shift-16-00: #9C27B0;
+    /* Purple - 16 A 00 */
+    --shift-08-16: #009688;
+    /* Teal/Green - 08 A 16 */
+    --shift-00-04: #E91E63;
+    /* Pink/Magenta - 00 A 04 */
+    --shift-22-02: #673AB7;
+    /* Deep Purple - 22 A 02 */
+    --shift-05-13: #FFA000;
+    /* Golden - 05 A 13 */
+    --shift-11-15: #8BC34A;
+    /* Light Green - 11 A 15 */
+    --shift-16-20: #D84315;
+    /* Burnt Orange - 16 A 20 */
+    --shift-20-00: #512DA8;
+    /* Indigo - 20 A 00 */
+    --shift-franco: #9E9E9E;
+    /* Darker Gray - Franco */
+    --shift-medical: #EF5350;
+    /* Red - Certificado Medico */
+    --shift-suspension: #FDD835;
+    /* Yellow - Suspension */
+    --shift-asiduidad: #66BB6A;
+    /* Green - Asiduidad */
+
+    /* Task Colors - Vibrant High Contrast */
+    --task-1: #00E676;
+    /* Vivid Malachite Green */
+    --task-2: #2979FF;
+    /* Electric Blue */
+    --task-3: #D500F9;
+    /* Vivid Purple / Magenta */
+    --task-4: #FF1744;
+    /* Bright Red / Pinkish */
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* Typography */
+    --font-main: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.15);
+
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    margin: 0;
+    padding: 0;
+    background-color: var(--ypf-background);
+    color: var(--ypf-grey-dark);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-size: 1.2rem;
+    color: var(--ypf-blue-dark);
+}
