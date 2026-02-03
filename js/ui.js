@@ -88,6 +88,8 @@ App.renderScheduler = function (container, state) {
         <div class="controls">
             ${state.isAdmin ? '<button id="btn-employees">👥 Colaboradores</button>' : ''}
             ${state.isAdmin ? '<button id="btn-tasks">🎲 Asignar Tareas</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-import">📤 Importar</button>' : ''}
+            <input type="file" id="input-import-csv" accept=".csv" style="display: none;">
             <button id="btn-export">📥 Exportar</button>
             <button id="btn-change-org">Cambiar Org</button>
         </div>
@@ -96,6 +98,20 @@ App.renderScheduler = function (container, state) {
     header.querySelector('#btn-change-org').onclick = () => App.store.setOrg(null);
     header.querySelector('#btn-admin').onclick = () => App.toggleAdmin(state);
     header.querySelector('#btn-export').onclick = () => App.exportToCSV(state.currentOrg, state.currentDate, employees, state.shifts, state.tasks);
+
+    if (state.isAdmin && header.querySelector('#btn-import')) {
+        const importBtn = header.querySelector('#btn-import');
+        const fileInput = header.querySelector('#input-import-csv');
+
+        importBtn.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                App.importFromCSV(file, state.currentOrg, state.currentDate);
+            }
+        };
+    }
+
     header.querySelector('#btn-prev-month').onclick = () => App.changeMonth(-1);
     header.querySelector('#btn-next-month').onclick = () => App.changeMonth(1);
 
