@@ -318,6 +318,12 @@
     border-radius: 6px !important;
 }
 
+.corner-header {
+    text-align: center !important;
+    background: var(--ypf-header-blue) !important;
+    color: var(--white) !important;
+}
+
 .scheduler-table thead th.sticky-col {
     z-index: 20;
     background: var(--ypf-header-blue);

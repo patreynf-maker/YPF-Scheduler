@@ -18,5 +18,6 @@ App.getDaysInMonth = function (date) {
 };
 
 App.formatMonthYear = function (date) {
-    return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    const formatted = date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };

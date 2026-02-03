@@ -90,14 +90,16 @@ App.renderScheduler = function (container, state) {
             ${state.isAdmin ? '<button id="btn-tasks">🎲 Asignar Tareas</button>' : ''}
             ${state.isAdmin ? '<button id="btn-import">📤 Importar</button>' : ''}
             <input type="file" id="input-import-csv" accept=".csv" style="display: none;">
-            <button id="btn-export">📥 Exportar</button>
+            ${state.isAdmin ? '<button id="btn-export">📥 Exportar</button>' : ''}
             <button id="btn-change-org">Cambiar Org</button>
         </div>
     `;
 
     header.querySelector('#btn-change-org').onclick = () => App.store.setOrg(null);
     header.querySelector('#btn-admin').onclick = () => App.toggleAdmin(state);
-    header.querySelector('#btn-export').onclick = () => App.exportToCSV(state.currentOrg, state.currentDate, employees, state.shifts, state.tasks);
+    if (header.querySelector('#btn-export')) {
+        header.querySelector('#btn-export').onclick = () => App.exportToCSV(state.currentOrg, state.currentDate, employees, state.shifts, state.tasks);
+    }
 
     if (state.isAdmin && header.querySelector('#btn-import')) {
         const importBtn = header.querySelector('#btn-import');
@@ -161,7 +163,7 @@ App.renderScheduler = function (container, state) {
 
     // Empty corner cell
     const cornerTh = document.createElement('th');
-    cornerTh.className = 'sticky-col';
+    cornerTh.className = 'sticky-col corner-header';
     cornerTh.textContent = 'Colaborador';
     headerRow.appendChild(cornerTh);
 
