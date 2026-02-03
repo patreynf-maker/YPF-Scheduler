@@ -27,23 +27,23 @@ App.store = {
         this.emitChange();
     },
 
-    // Shift Management with Auto-Task Trigger
     setShift(employeeId, day, shiftCode, monthKey) {
-        if (!this.state.shifts[monthKey]) this.state.shifts[monthKey] = {};
-        if (!this.state.shifts[monthKey][employeeId]) this.state.shifts[monthKey][employeeId] = {};
+        try {
+            if (!this.state.shifts[monthKey]) this.state.shifts[monthKey] = {};
+            if (!this.state.shifts[monthKey][employeeId]) this.state.shifts[monthKey][employeeId] = {};
 
-        this.state.shifts[monthKey][employeeId][day] = shiftCode;
+            this.state.shifts[monthKey][employeeId][day] = shiftCode;
 
-        // Check if we should trigger auto-assignment for this day
-        this.checkAndAssignTasks(day, monthKey);
+            this.checkAndAssignTasks(day, monthKey);
 
-        this.emitChange(`shifts/${monthKey}/${employeeId}/${day}`, shiftCode);
+            this.emitChange(`shifts/${monthKey}/${employeeId}/${day}`, shiftCode);
 
-        // Also sync tasks if they were changed
-        if (this.state.tasks[monthKey]) {
-            // We could be more granular here, but for now syncing tasks for the day is fine
-            // Since checkAndAssignTasks might have touched multiple employees
-            this.saveTasksToFirebase(monthKey);
+            if (this.state.tasks[monthKey]) {
+                this.saveTasksToFirebase(monthKey);
+            }
+        } catch (e) {
+            console.error('Error in setShift:', e);
+            throw e;
         }
     },
 
@@ -51,7 +51,6 @@ App.store = {
         if (this.state.shifts[monthKey] && this.state.shifts[monthKey][employeeId]) {
             delete this.state.shifts[monthKey][employeeId][day];
 
-            // Also remove any task assigned to this day
             if (this.state.tasks[monthKey] && this.state.tasks[monthKey][employeeId]) {
                 delete this.state.tasks[monthKey][employeeId][day];
             }
@@ -64,44 +63,40 @@ App.store = {
     checkAndAssignTasks(day, monthKey) {
         if (!this.state.currentOrg) return;
 
-        // Only run logic for PLAYA employees of current org
-        const playaEmployees = this.state.employees.filter(e =>
-            e.organization === this.state.currentOrg &&
-            e.category === App.CATEGORIES.PLAYA
-        );
+        try {
+            const playaEmployees = this.state.employees.filter(e =>
+                e.organization === this.state.currentOrg &&
+                e.category === App.CATEGORIES.PLAYA
+            );
 
-        if (playaEmployees.length === 0) return;
+            if (playaEmployees.length === 0) return;
 
-        // Check if ALL Playa employees have a shift assigned (working or non-working) on this day
-        const allAssigned = playaEmployees.every(emp => {
-            const shift = this.state.shifts[monthKey]?.[emp.id]?.[day];
-            return shift !== undefined && shift !== null && shift !== '';
-        });
-
-        // If all assigned, trigger task distribution
-        if (allAssigned) {
-            console.log(`Auto-assigning tasks for day ${day}...`);
-            App.assignDailyTasks(day, monthKey, playaEmployees, this.state.shifts[monthKey]);
-        } else {
-            // Optional: Clear tasks for this day if the day becomes incomplete? 
-            // Ideally yes, to ensure validity, but might be annoying. 
-            // Let's clear them to enforce the "only when full" rule strictness and re-calculate when full again.
-            playaEmployees.forEach(emp => {
-                if (this.state.tasks[monthKey] && this.state.tasks[monthKey][emp.id]) {
-                    delete this.state.tasks[monthKey][emp.id][day];
-                }
+            const allAssigned = playaEmployees.every(emp => {
+                const shift = this.state.shifts[monthKey]?.[emp.id]?.[day];
+                return shift !== undefined && shift !== null && shift !== '';
             });
+
+            if (allAssigned) {
+                console.log(`Auto-assigning tasks for day ${day}...`);
+                App.assignDailyTasks(day, monthKey, playaEmployees, this.state.shifts[monthKey]);
+            } else {
+                playaEmployees.forEach(emp => {
+                    if (this.state.tasks[monthKey] && this.state.tasks[monthKey][emp.id]) {
+                        delete this.state.tasks[monthKey][emp.id][day];
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error in checkAndAssignTasks:', e);
         }
     },
 
-    // Add a helper to save all tasks for a month (since auto-assignment touches many)
     saveTasksToFirebase(monthKey) {
         if (window.db) {
             window.db.ref(`scheduler_data/tasks/${monthKey}`).set(this.state.tasks[monthKey]);
         }
     },
 
-    // Employee CRUD
     addEmployee(name, organization, category) {
         const newEmployee = {
             id: this.state.nextEmployeeId++,
@@ -110,7 +105,7 @@ App.store = {
             category: category
         };
         this.state.employees.push(newEmployee);
-        this.emitChange(); // Full sync for employees
+        this.emitChange();
         return newEmployee;
     },
 
@@ -129,7 +124,6 @@ App.store = {
         if (index !== -1) {
             this.state.employees.splice(index, 1);
 
-            // Clean up shifts and tasks for this employee
             Object.keys(this.state.shifts).forEach(monthKey => {
                 if (this.state.shifts[monthKey][id]) {
                     delete this.state.shifts[monthKey][id];
@@ -154,12 +148,10 @@ App.store = {
     },
     emitChange(path, value) {
         this.listeners.forEach(l => l(this.state));
-
-        // Save to Firebase if initialized
         if (window.db) {
             App.saveToFirebase(path, value);
         } else {
-            App.saveStore(); // Fallback to local
+            App.saveStore();
         }
     }
 };

@@ -11,12 +11,24 @@ App.renderApp = function () {
 };
 
 App.render = function (container, state) {
+    // Save scroll position of the grid if it exists
+    const grid = container.querySelector('.grid-container');
+    const scrollLeft = grid ? grid.scrollLeft : 0;
+    const scrollTop = grid ? grid.scrollTop : 0;
+
     container.innerHTML = '';
 
     if (!state.currentOrg) {
         App.renderOrgSelector(container);
     } else {
         App.renderScheduler(container, state);
+
+        // Restore scroll position
+        const newGrid = container.querySelector('.grid-container');
+        if (newGrid) {
+            newGrid.scrollLeft = scrollLeft;
+            newGrid.scrollTop = scrollTop;
+        }
     }
 };
 
@@ -436,9 +448,15 @@ App.showShiftPickerModal = function (employee, day, options) {
         btn.style.backgroundColor = opt.color;
 
         btn.onclick = () => {
-            const monthKey = `${App.store.state.currentDate.getFullYear()}-${App.store.state.currentDate.getMonth()}`;
-            App.store.setShift(employee.id, day.date, opt.code, monthKey);
-            modal.remove();
+            try {
+                const monthKey = `${App.store.state.currentDate.getFullYear()}-${App.store.state.currentDate.getMonth()}`;
+                console.log(`Setting shift: EmpId=${employee.id}, Day=${day.date}, Code=${opt.code}, Month=${monthKey}`);
+                App.store.setShift(employee.id, day.date, opt.code, monthKey);
+                modal.remove();
+            } catch (err) {
+                console.error('Error assigning shift:', err);
+                alert('Error al asignar turno: ' + err.message);
+            }
         };
         grid.appendChild(btn);
     });
