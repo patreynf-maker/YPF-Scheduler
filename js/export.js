@@ -45,33 +45,59 @@ App.importFromCSV = function (file, orgName, currentDate) {
         const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
         const employees = App.store.getEmployeesByOrg(orgName);
 
-        // Header parsing to get days
-        const header = lines[0].split(",");
+        // Helper to parse CSV line correctly handling quotes and commas
+        const parseLine = (line) => {
+            const result = [];
+            let cell = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(cell.trim());
+                    cell = '';
+                } else {
+                    cell += char;
+                }
+            }
+            result.push(cell.trim());
+            return result;
+        };
+
+        const firstLine = lines[0].replace(/^\uFEFF/, ''); // Remove UTF-8 BOM if present
+        const header = parseLine(firstLine);
         const daysIndices = [];
         header.forEach((col, idx) => {
-            if (col.match(/^\d+/)) {
-                daysIndices.push({ date: parseInt(col), index: idx });
+            // Match day number even if quoted or with extra text
+            const cleanCol = col.replace(/"/g, '');
+            const match = cleanCol.match(/^(\d+)/);
+            if (match) {
+                daysIndices.push({ date: parseInt(match[1]), index: idx });
             }
         });
+
+        if (daysIndices.length === 0) {
+            alert("No se detectaron columnas de días en el encabezado del archivo. Asegúrate de usar el formato exportado por el sistema.");
+            return;
+        }
 
         let updatedCount = 0;
 
         for (let i = 1; i < lines.length; i++) {
             if (!lines[i].trim()) continue;
 
-            // Handle quoted commas in CSV
-            const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-            if (!row) continue;
+            const row = parseLine(lines[i]);
+            if (!row || row.length < 2) continue;
 
-            const empName = row[0].replace(/"/g, '').trim();
-            const employee = employees.find(e => e.name.trim() === empName);
+            const csvName = row[0].replace(/"/g, '').toLowerCase().trim();
+            const employee = employees.find(e => e.name.toLowerCase().trim() === csvName);
 
             if (employee) {
                 daysIndices.forEach(dayInfo => {
-                    let cellValue = row[dayInfo.index]?.replace(/"/g, '').trim();
-                    if (!cellValue) return;
+                    let cellValue = row[dayInfo.index];
+                    if (cellValue === undefined || cellValue === null) return;
 
-                    // Split shift and task: "14-22 (Tarea: 1)"
                     let shiftCode = cellValue;
                     let taskNum = null;
 
@@ -81,28 +107,32 @@ App.importFromCSV = function (file, orgName, currentDate) {
                         taskNum = parts[1].replace(/\D/g, '');
                     }
 
-                    // Update shift
+                    // Always update shift (even if empty to allow clearing)
                     if (!App.store.state.shifts[monthKey]) App.store.state.shifts[monthKey] = {};
                     if (!App.store.state.shifts[monthKey][employee.id]) App.store.state.shifts[monthKey][employee.id] = {};
                     App.store.state.shifts[monthKey][employee.id][dayInfo.date] = shiftCode;
 
-                    // Update task
+                    // Update task if found, or clear if not present in cell but exists in state
                     if (taskNum) {
                         if (!App.store.state.tasks[monthKey]) App.store.state.tasks[monthKey] = {};
                         if (!App.store.state.tasks[monthKey][employee.id]) App.store.state.tasks[monthKey][employee.id] = {};
                         App.store.state.tasks[monthKey][employee.id][dayInfo.date] = taskNum;
+                    } else if (App.store.state.tasks[monthKey]?.[employee.id]?.[dayInfo.date]) {
+                        // Clear task if not in CSV for this specific cell
+                        delete App.store.state.tasks[monthKey][employee.id][dayInfo.date];
                     }
                 });
                 updatedCount++;
+            } else if (row[0]) {
+                console.log(`No match for CSV name: "${row[0]}"`);
             }
         }
 
         if (updatedCount > 0) {
-            // Trigger a full sync and notification
-            App.store.emitChange(); // This will trigger Firebase sync if loaded
-            alert(`Importación completada. Se actualizaron datos para ${updatedCount} colaboradores.`);
+            App.store.emitChange();
+            alert(`Importación completada con éxito.\nSe actualizaron: ${updatedCount} colaboradores.`);
         } else {
-            alert("No se encontraron coincidencias de nombres en el archivo para esta organización.");
+            alert("No se encontraron coincidencias. Asegúrate de:\n1. Que los nombres coincidan exactamente.\n2. Estar en la misma Organización que el archivo.\n3. Que el archivo no esté abierto en Excel al importar.");
         }
     };
     reader.readAsText(file);
