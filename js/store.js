@@ -9,7 +9,8 @@ App.store = {
         shifts: {},
         tasks: {},
         currentFilter: 'ALL',
-        nextEmployeeId: 500
+        nextEmployeeId: 500,
+        isLoaded: false // Flag to prevent saving before load
     },
 
     getEmployeesByOrg(org) {
@@ -19,12 +20,12 @@ App.store = {
 
     setOrg(org) {
         this.state.currentOrg = org;
-        this.emitChange();
+        this.emitChange(null, null, false); // UI change only
     },
 
     setAdmin(status) {
         this.state.isAdmin = status;
-        this.emitChange();
+        this.emitChange(null, null, false);
     },
 
     setShift(employeeId, day, shiftCode, monthKey) {
@@ -157,12 +158,15 @@ App.store = {
     subscribe(listener) {
         this.listeners.push(listener);
     },
-    emitChange(path, value) {
+    emitChange(path, value, sync = true) {
         this.listeners.forEach(l => l(this.state));
-        if (window.db) {
+
+        // Always save UI context to local
+        App.saveStore();
+
+        // Only save to Firebase if initialized, loaded, and not explicitly blocked
+        if (sync && window.db && this.state.isLoaded) {
             App.saveToFirebase(path, value);
-        } else {
-            App.saveStore();
         }
     }
 };
@@ -170,18 +174,25 @@ App.store = {
 App.saveToFirebase = function (path, value) {
     if (!window.db) return;
 
+    // Safety: Never sync if state isn't marked as loaded
+    if (!App.store.state.isLoaded) {
+        console.warn('Blocked saveToFirebase: store not yet loaded from cloud.');
+        return;
+    }
+
     if (path) {
         // Granular update
         window.db.ref('scheduler_data/' + path).set(value)
             .catch(err => console.error('Firebase save error:', err));
     } else {
-        // Full state sync (used for deletions or initial setup)
+        // Full state sync - only use when necessary (deletions or initializing)
         const syncData = {
             employees: App.store.state.employees,
             shifts: App.store.state.shifts,
             tasks: App.store.state.tasks,
             nextEmployeeId: App.store.state.nextEmployeeId
         };
+        console.log('Performing full Firebase sync...');
         window.db.ref('scheduler_data').set(syncData)
             .catch(err => console.error('Firebase save error:', err));
     }
@@ -243,20 +254,22 @@ App.initStore = function () {
                     (data.employees ? Object.values(data.employees) : []);
                 App.store.state.shifts = data.shifts || {};
                 App.store.state.tasks = data.tasks || {};
-                // Ensure nextEmployeeId is higher than any existing employee id
+
                 const maxId = App.store.state.employees.reduce((max, e) => Math.max(max, e.id), 499);
                 App.store.state.nextEmployeeId = Math.max(data.nextEmployeeId || 500, maxId + 1);
 
-                // Notify listeners to re-render
+                App.store.state.isLoaded = true; // Data received, safe to sync
                 App.store.listeners.forEach(l => l(App.store.state));
             } else {
                 console.log('Firebase empty, seeding...');
+                App.store.state.isLoaded = true; // Safe to seed
                 App.seedStore();
             }
         });
     } else {
         // Fallback to purely local if Firebase fails
         console.warn('Firebase not available, using localStorage fallback');
+        App.store.state.isLoaded = true;
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
@@ -288,9 +301,14 @@ App.seedStore = function () {
     ];
 
     App.store.state.employees = dummyEmployees;
-    App.store.state.nextEmployeeId = 12;
+    App.store.state.nextEmployeeId = 500; // Reset to safe threshold
     App.store.state.shifts = {};
     App.store.state.tasks = {};
+
+    // Explicitly sync seed to Firebase
+    if (window.db) {
+        App.saveToFirebase();
+    }
     App.saveStore();
 };
 

@@ -124,7 +124,7 @@ App.renderScheduler = function (container, state) {
     filterBar.querySelectorAll('.filter-btn').forEach(btn => {
         btn.onclick = () => {
             App.store.state.currentFilter = btn.dataset.filter;
-            App.store.emitChange();
+            App.store.emitChange(null, null, false);
         };
     });
 
