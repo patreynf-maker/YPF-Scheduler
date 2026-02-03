@@ -371,15 +371,7 @@ App.toggleAdmin = function (state) {
 
 // Helper to determine if task badge text should be black or white for contrast
 App.getTaskTextColor = function (shiftCode, taskNum) {
-    if (!taskNum) return 'white';
-
-    const task = parseInt(taskNum);
-
-    if (task === 2) {
-        return 'black'; // Yellow background (Task 2) needs black text
-    }
-
-    return 'white'; // Tasks 1, 3, 4 have darker backgrounds
+    return 'black';
 };
 
 App.handleCellClick = function (employee, day, monthKey, state) {

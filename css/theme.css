@@ -28,14 +28,14 @@
     /* Pink/Magenta - 00 A 04 */
     --shift-22-02: #673AB7;
     /* Deep Purple - 22 A 02 */
-    --shift-05-13: #FFA000;
-    /* Golden - 05 A 13 */
-    --shift-11-15: #8BC34A;
-    /* Light Green - 11 A 15 */
-    --shift-16-20: #D84315;
-    /* Burnt Orange - 16 A 20 */
-    --shift-20-00: #512DA8;
-    /* Indigo - 20 A 00 */
+    --shift-05-13: #795548;
+    /* Brown - 05 A 13 */
+    --shift-11-15: #00BCD4;
+    /* Cyan - 11 A 15 */
+    --shift-16-20: #E040FB;
+    /* Orchid - 16 A 20 */
+    --shift-20-00: #FF4081;
+    /* Rose - 20 A 00 */
     --shift-franco: #9E9E9E;
     /* Darker Gray - Franco */
     --shift-medical: #EF5350;
@@ -46,10 +46,14 @@
     /* Green - Asiduidad */
 
     /* Task Colors - Vibrant High Contrast */
-    --task-1: #4CAF50; /* Green */
-    --task-2: #FFEB3B; /* Yellow */
-    --task-3: #FF9800; /* Orange */
-    --task-4: #F44336; /* Red */
+    --task-1: #4CAF50;
+    /* Green */
+    --task-2: #FFEB3B;
+    /* Yellow */
+    --task-3: #FF9800;
+    /* Orange */
+    --task-4: #F44336;
+    /* Red */
 
     /* Spacing */
     --spacing-xs: 4px;
