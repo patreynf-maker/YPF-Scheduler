@@ -9,7 +9,7 @@ App.store = {
         shifts: {},
         tasks: {},
         currentFilter: 'ALL',
-        nextEmployeeId: 100
+        nextEmployeeId: 500
     },
 
     getEmployeesByOrg(org) {
@@ -37,7 +37,14 @@ App.store = {
         // Check if we should trigger auto-assignment for this day
         this.checkAndAssignTasks(day, monthKey);
 
-        this.emitChange();
+        this.emitChange(`shifts/${monthKey}/${employeeId}/${day}`, shiftCode);
+
+        // Also sync tasks if they were changed
+        if (this.state.tasks[monthKey]) {
+            // We could be more granular here, but for now syncing tasks for the day is fine
+            // Since checkAndAssignTasks might have touched multiple employees
+            this.saveTasksToFirebase(monthKey);
+        }
     },
 
     removeShift(employeeId, day, monthKey) {
@@ -87,6 +94,13 @@ App.store = {
         }
     },
 
+    // Add a helper to save all tasks for a month (since auto-assignment touches many)
+    saveTasksToFirebase(monthKey) {
+        if (window.db) {
+            window.db.ref(`scheduler_data/tasks/${monthKey}`).set(this.state.tasks[monthKey]);
+        }
+    },
+
     // Employee CRUD
     addEmployee(name, organization, category) {
         const newEmployee = {
@@ -96,7 +110,7 @@ App.store = {
             category: category
         };
         this.state.employees.push(newEmployee);
-        this.emitChange();
+        this.emitChange(); // Full sync for employees
         return newEmployee;
     },
 
@@ -138,32 +152,64 @@ App.store = {
     subscribe(listener) {
         this.listeners.push(listener);
     },
-    emitChange() {
+    emitChange(path, value) {
         this.listeners.forEach(l => l(this.state));
 
         // Save to Firebase if initialized
         if (window.db) {
-            App.saveToFirebase();
+            App.saveToFirebase(path, value);
         } else {
             App.saveStore(); // Fallback to local
         }
     }
 };
 
-App.saveToFirebase = function () {
+App.saveToFirebase = function (path, value) {
     if (!window.db) return;
 
-    // We only sync employees, shifts and tasks.
-    // currentOrg, currentDate, isAdmin are local state.
-    const syncData = {
-        employees: App.store.state.employees,
-        shifts: App.store.state.shifts,
-        tasks: App.store.state.tasks,
-        nextEmployeeId: App.store.state.nextEmployeeId
-    };
+    if (path) {
+        // Granular update
+        window.db.ref('scheduler_data/' + path).set(value)
+            .catch(err => console.error('Firebase save error:', err));
+    } else {
+        // Full state sync (used for deletions or initial setup)
+        const syncData = {
+            employees: App.store.state.employees,
+            shifts: App.store.state.shifts,
+            tasks: App.store.state.tasks,
+            nextEmployeeId: App.store.state.nextEmployeeId
+        };
+        window.db.ref('scheduler_data').set(syncData)
+            .catch(err => console.error('Firebase save error:', err));
+    }
+};
 
-    window.db.ref('scheduler_data').set(syncData)
-        .catch(err => console.error('Firebase save error:', err));
+// Helper to normalize Firebase data (converts potential arrays back to objects)
+App.normalizeFirebaseData = function (data, path = '') {
+    if (!data || typeof data !== 'object') return data;
+
+    // We want to keep 'employees' as a real Array if it comes as one
+    if (Array.isArray(data)) {
+        if (path.endsWith('employees')) {
+            return data.filter(i => i !== undefined && i !== null).map(i => App.normalizeFirebaseData(i, path));
+        }
+
+        // Otherwise, convert array with potential holes/indices to Object
+        const obj = {};
+        data.forEach((val, idx) => {
+            if (val !== undefined && val !== null) {
+                obj[idx] = App.normalizeFirebaseData(val, path + '/' + idx);
+            }
+        });
+        return obj;
+    }
+
+    // Recursively normalize children
+    const normalized = {};
+    Object.keys(data).forEach(key => {
+        normalized[key] = App.normalizeFirebaseData(data[key], path ? path + '/' + key : key);
+    });
+    return normalized;
 };
 
 App.initStore = function () {
@@ -185,13 +231,18 @@ App.initStore = function () {
     if (window.db) {
         console.log('Connecting to Firebase...');
         window.db.ref('scheduler_data').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                console.log('Firebase data received');
-                App.store.state.employees = data.employees || [];
+            const rawData = snapshot.val();
+            if (rawData) {
+                console.log('Firebase data received - Normalizing...');
+                const data = App.normalizeFirebaseData(rawData);
+
+                App.store.state.employees = Array.isArray(data.employees) ? data.employees :
+                    (data.employees ? Object.values(data.employees) : []);
                 App.store.state.shifts = data.shifts || {};
                 App.store.state.tasks = data.tasks || {};
-                App.store.state.nextEmployeeId = data.nextEmployeeId || 100;
+                // Ensure nextEmployeeId is higher than any existing employee id
+                const maxId = App.store.state.employees.reduce((max, e) => Math.max(max, e.id), 499);
+                App.store.state.nextEmployeeId = Math.max(data.nextEmployeeId || 500, maxId + 1);
 
                 // Notify listeners to re-render
                 App.store.listeners.forEach(l => l(App.store.state));

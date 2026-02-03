@@ -75,6 +75,7 @@ App.renderScheduler = function (container, state) {
         </div>
         <div class="controls">
             ${state.isAdmin ? '<button id="btn-employees">👥 Colaboradores</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-tasks">🎲 Asignar Tareas</button>' : ''}
             <button id="btn-export">📥 Exportar</button>
             <button id="btn-change-org">Cambiar Org</button>
         </div>
