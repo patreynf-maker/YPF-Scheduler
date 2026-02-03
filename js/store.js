@@ -80,6 +80,17 @@ App.store = {
                 console.log(`Auto-assigning tasks for day ${day}...`);
                 App.assignDailyTasks(day, monthKey, playaEmployees, this.state.shifts[monthKey]);
             } else {
+                // Modified: Warn that tasks won't be assigned until all have shifts
+                // We only alert if there's at least one shift assigned to avoid spamming on empty days
+                const someAssigned = playaEmployees.some(emp => {
+                    const shift = this.state.shifts[monthKey]?.[emp.id]?.[day];
+                    return shift !== undefined && shift !== null && shift !== '';
+                });
+
+                if (someAssigned) {
+                    console.log(`Day ${day} incomplete, clearing partial tasks.`);
+                }
+
                 playaEmployees.forEach(emp => {
                     if (this.state.tasks[monthKey] && this.state.tasks[monthKey][emp.id]) {
                         delete this.state.tasks[monthKey][emp.id][day];

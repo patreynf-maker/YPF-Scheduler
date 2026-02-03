@@ -13,6 +13,21 @@ App.assignTasksForMonth = function (year, month) {
     const monthKey = `${year}-${month}`;
     if (!state.tasks[monthKey]) state.tasks[monthKey] = {};
 
+    // Validation: Ensure all Playa employees have a shift for EVERY day of the month
+    let incompleteDays = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+        const allAssigned = employees.every(emp => {
+            const shift = state.shifts[monthKey]?.[emp.id]?.[d];
+            return shift !== undefined && shift !== null && shift !== '';
+        });
+        if (!allAssigned) incompleteDays.push(d);
+    }
+
+    if (incompleteDays.length > 0) {
+        alert(`No se pueden asignar tareas. Faltan asignar turnos en los días: ${incompleteDays.join(', ')}. Todos los colaboradores deben tener un turno asignado.`);
+        return;
+    }
+
     for (let d = 1; d <= daysInMonth; d++) {
         App.assignDailyTasks(d, monthKey, employees, state.shifts[monthKey]);
     }

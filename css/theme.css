@@ -46,14 +46,10 @@
     /* Green - Asiduidad */
 
     /* Task Colors - Vibrant High Contrast */
-    --task-1: #00E676;
-    /* Vivid Malachite Green */
-    --task-2: #2979FF;
-    /* Electric Blue */
-    --task-3: #D500F9;
-    /* Vivid Purple / Magenta */
-    --task-4: #FF1744;
-    /* Bright Red / Pinkish */
+    --task-1: #4CAF50; /* Green */
+    --task-2: #FFEB3B; /* Yellow */
+    --task-3: #FF9800; /* Orange */
+    --task-4: #F44336; /* Red */
 
     /* Spacing */
     --spacing-xs: 4px;

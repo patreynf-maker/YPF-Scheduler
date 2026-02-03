@@ -335,7 +335,7 @@ App.renderLegends = function (filter) {
             item.style.color = '#333';
             item.style.border = '1px solid #ddd';
             item.innerHTML = `
-                <div class="task-badge-main" style="position: relative; top: auto; right: auto; margin-right: 8px; background-color: ${App.TASK_COLORS[num]}; width: 24px; height: 24px; font-size: 0.8rem;">${num}</div>
+                <div class="task-badge-main" style="position: relative; top: auto; right: auto; margin-right: 8px; background-color: ${App.TASK_COLORS[num]}; color: ${App.getTaskTextColor(null, num)}; width: 24px; height: 24px; font-size: 0.8rem;">${num}</div>
                 ${App.TASKS_PLAYA[num]}
             `;
             taskItems.appendChild(item);
@@ -371,36 +371,15 @@ App.toggleAdmin = function (state) {
 
 // Helper to determine if task badge text should be black or white for contrast
 App.getTaskTextColor = function (shiftCode, taskNum) {
-    if (!shiftCode || !taskNum) return 'white';
+    if (!taskNum) return 'white';
 
-    // Tasks 1-4 colors (vibrant Green, Blue, Purple, Red) are currently white by default.
-    // We switch to black if the shift background color is "similar" to the task color.
-
-    const shiftT = shiftCode.toUpperCase();
     const task = parseInt(taskNum);
 
-    // Similarity mapping:
-    // Task 1 (Green) -> Similar to green/teal shifts
-    if (task === 1 && (shiftT.includes('08-16') || shiftT.includes('11-15') || shiftT.includes('ASIDUIDAD'))) {
-        return 'black';
+    if (task === 2) {
+        return 'black'; // Yellow background (Task 2) needs black text
     }
 
-    // Task 2 (Blue) -> Similar to blue/navy shifts
-    if (task === 2 && (shiftT.includes('14-22') || shiftT.includes('22-06') || shiftT.includes('22-02'))) {
-        return 'black';
-    }
-
-    // Task 3 (Purple) -> Similar to purple/indigo shifts
-    if (task === 3 && (shiftT.includes('16-00') || shiftT.includes('22-02') || shiftT.includes('20-00'))) {
-        return 'black';
-    }
-
-    // Task 4 (Red) -> Similar to red/pink/orange shifts
-    if (task === 4 && (shiftT.includes('00-04') || shiftT.includes('16-20') || shiftT.includes('MEDICO'))) {
-        return 'black';
-    }
-
-    return 'white'; // Default
+    return 'white'; // Tasks 1, 3, 4 have darker backgrounds
 };
 
 App.handleCellClick = function (employee, day, monthKey, state) {
@@ -452,6 +431,23 @@ App.showShiftPickerModal = function (employee, day, options) {
                 const monthKey = `${App.store.state.currentDate.getFullYear()}-${App.store.state.currentDate.getMonth()}`;
                 console.log(`Setting shift: EmpId=${employee.id}, Day=${day.date}, Code=${opt.code}, Month=${monthKey}`);
                 App.store.setShift(employee.id, day.date, opt.code, monthKey);
+
+                // New logic: Check if day is complete. If not, inform user.
+                const updatedState = App.store.state;
+                const playaEmployees = updatedState.employees.filter(e =>
+                    e.organization === updatedState.currentOrg &&
+                    e.category === App.CATEGORIES.PLAYA
+                );
+
+                const allAssigned = playaEmployees.every(emp => {
+                    const shift = updatedState.shifts[monthKey]?.[emp.id]?.[day.date];
+                    return shift !== undefined && shift !== null && shift !== '';
+                });
+
+                if (!allAssigned) {
+                    console.log("Día aún incompleto, no se asignarán tareas hasta completar todos los colaboradores.");
+                }
+
                 modal.remove();
             } catch (err) {
                 console.error('Error assigning shift:', err);
