@@ -8,13 +8,26 @@ App.isMonthCompleteForOrg = function (employees, year, month, allShifts) {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const monthlyShifts = allShifts[monthKey];
 
-    if (!monthlyShifts) return false;
+    if (!monthlyShifts) {
+        console.warn(`No shifts found for month ${monthKey}`);
+        return false;
+    }
 
     return employees.every(emp => {
         const empShifts = monthlyShifts[emp.id];
-        if (!empShifts) return false;
+
+        // If employee has NO shifts at all in this month, skip them (assume inactive for this month)
+        if (!empShifts || Object.keys(empShifts).length === 0) {
+            console.log(`Employee ${emp.name} has no shifts in ${monthKey}, skipping completion check.`);
+            return true;
+        }
+
         for (let d = 1; d <= daysInMonth; d++) {
-            if (!empShifts[d]) return false;
+            const val = empShifts[d];
+            if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                console.warn(`Employee ${emp.name} is missing shift for day ${d} in ${monthKey}`);
+                return false;
+            }
         }
         return true;
     });
