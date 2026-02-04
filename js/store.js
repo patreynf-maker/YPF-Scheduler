@@ -292,7 +292,13 @@ App.initStore = function () {
                 App.store.state.shifts = data.shifts || {};
                 App.store.state.tasks = data.tasks || {};
                 App.store.state.organizations = Array.isArray(data.organizations) ? data.organizations :
-                    (data.organizations ? Object.values(data.organizations) : []); // Load organizations
+                    (data.organizations ? Object.values(data.organizations) : []);
+
+                // Fallback: If no organizations found in cloud, use defaults
+                if (App.store.state.organizations.length === 0 && App.ORGANIZATIONS) {
+                    App.store.state.organizations = [...App.ORGANIZATIONS];
+                    // Don't auto-save here to avoid race conditions, but mark as loaded
+                }
 
                 const maxId = App.store.state.employees.reduce((max, e) => Math.max(max, e.id), 499);
                 App.store.state.nextEmployeeId = Math.max(data.nextEmployeeId || 500, maxId + 1);
@@ -340,7 +346,8 @@ App.seedStore = function () {
     ];
 
     App.store.state.employees = dummyEmployees;
-    App.store.state.nextEmployeeId = 500; // Reset to safe threshold
+    App.store.state.organizations = [...App.ORGANIZATIONS]; // Seed organizations too
+    App.store.state.nextEmployeeId = 500;
     App.store.state.shifts = {};
     App.store.state.tasks = {};
 
