@@ -9,28 +9,35 @@ App.isMonthCompleteForOrg = function (employees, year, month, allShifts) {
     const monthlyShifts = allShifts[monthKey];
 
     if (!monthlyShifts) {
-        console.warn(`No shifts found for month ${monthKey}`);
-        return false;
+        return { valid: false, message: `No se encontraron turnos para el mes ${monthKey}` };
     }
 
-    return employees.every(emp => {
+    const errors = [];
+    employees.forEach(emp => {
         const empShifts = monthlyShifts[emp.id];
 
         // If employee has NO shifts at all in this month, skip them (assume inactive for this month)
         if (!empShifts || Object.keys(empShifts).length === 0) {
-            console.log(`Employee ${emp.name} has no shifts in ${monthKey}, skipping completion check.`);
-            return true;
+            return;
         }
 
         for (let d = 1; d <= daysInMonth; d++) {
             const val = empShifts[d];
             if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
-                console.warn(`Employee ${emp.name} is missing shift for day ${d} in ${monthKey}`);
-                return false;
+                errors.push(`${emp.name} (Día ${d})`);
+                if (errors.length > 5) break;
             }
         }
-        return true;
     });
+
+    if (errors.length > 0) {
+        return {
+            valid: false,
+            message: `Faltan horarios para:\n${errors.join('\n')}${errors.length > 5 ? '\n...y otros.' : ''}`
+        };
+    }
+
+    return { valid: true };
 };
 
 /**

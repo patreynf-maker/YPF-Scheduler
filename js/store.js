@@ -135,8 +135,9 @@ App.store = {
         const year = this.state.currentDate.getFullYear();
         const month = this.state.currentDate.getMonth();
 
-        if (!App.isMonthCompleteForOrg(employees, year, month, this.state.shifts)) {
-            alert('Error: La planilla del mes actual debe estar completa para todos los colaboradores antes de continuar.');
+        const check = App.isMonthCompleteForOrg(employees, year, month, this.state.shifts);
+        if (!check.valid) {
+            alert(`No se puede propagar:\n${check.message}`);
             return;
         }
 
@@ -145,22 +146,28 @@ App.store = {
 
         if (!this.state.shifts[nextMonthKey]) this.state.shifts[nextMonthKey] = {};
 
+        const firebaseUpdates = {};
+
         employees.forEach(emp => {
             const predictions = App.predictNextMonthShifts(emp.id, year, month, this.state.shifts);
-            if (Object.keys(predictions).length > 0) {
+            if (predictions && Object.keys(predictions).length > 0) {
                 this.state.shifts[nextMonthKey][emp.id] = predictions;
+                // Prepare granular update for Firebase to avoid overwriting other orgs
+                firebaseUpdates[emp.id] = predictions;
             }
         });
 
-        // Save to Firebase (using full save as it's a new month key usually)
-        if (window.db) {
-            window.db.ref(`scheduler_data/shifts/${nextMonthKey}`).set(this.state.shifts[nextMonthKey]);
+        // Save to Firebase (using granular update for specific employees)
+        if (window.db && Object.keys(firebaseUpdates).length > 0) {
+            console.log(`Granular sync for ${Object.keys(firebaseUpdates).length} employees in ${nextMonthKey}`);
+            window.db.ref(`scheduler_data/shifts/${nextMonthKey}`).update(firebaseUpdates)
+                .catch(err => console.error('Firebase propagation error:', err));
         }
 
         // Navigate to next month
         this.state.currentDate = nextMonthDate;
-        this.emitChange();
-        alert(`Se han propagado los turnos para ${App.formatMonthYear(nextMonthDate)}.`);
+        this.emitChange(null, null, false); // Local update only as we already synced shifts
+        alert(`Se han propagado los turnos para ${App.formatMonthYear(nextMonthDate)} (Solo sucursal ${this.state.currentOrg}).`);
     },
 
     addEmployee(name, organization, category) {
