@@ -33,24 +33,85 @@ App.render = function (container, state) {
 };
 
 App.renderOrgSelector = function (container) {
+    const state = App.store.state;
     const wrapper = document.createElement('div');
     wrapper.className = 'org-selector-container';
+
+    // Header with Admin Toggle
+    const headerRow = document.createElement('div');
+    headerRow.className = 'org-selector-header';
 
     const title = document.createElement('h1');
     title.textContent = 'Planilla de Horarios';
 
+    const adminBtn = document.createElement('button');
+    adminBtn.className = `btn-admin-login ${state.isAdmin ? 'active' : ''}`;
+    adminBtn.innerHTML = state.isAdmin ? '🔓 Admin Activo' : '🔒 Acceso Admin';
+    adminBtn.onclick = () => App.toggleAdmin(state);
+
+    headerRow.appendChild(title);
+    headerRow.appendChild(adminBtn);
+    wrapper.appendChild(headerRow);
+
+    // Add Org Form (Admin Only)
+    if (state.isAdmin) {
+        const addOrgForm = document.createElement('div');
+        addOrgForm.className = 'add-org-form';
+        addOrgForm.innerHTML = `
+            <input type="text" id="new-org-name" placeholder="Nueva sucursal..." maxlength="20">
+            <button id="btn-add-org">Agregar</button>
+        `;
+
+        const input = addOrgForm.querySelector('#new-org-name');
+        const btn = addOrgForm.querySelector('#btn-add-org');
+
+        const handleAdd = () => {
+            const name = input.value.trim().toUpperCase();
+            if (name) {
+                App.store.addOrganization(name);
+                input.value = '';
+            }
+        };
+
+        btn.onclick = handleAdd;
+        input.onkeypress = (e) => { if (e.key === 'Enter') handleAdd(); };
+
+        wrapper.appendChild(addOrgForm);
+    }
+
     const grid = document.createElement('div');
     grid.className = 'org-grid';
 
-    App.ORGANIZATIONS.forEach(org => {
+    // Use dynamic organizations from store
+    const orgs = state.organizations && state.organizations.length > 0
+        ? state.organizations
+        : (App.ORGANIZATIONS || []);
+
+    orgs.forEach(org => {
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'org-card-wrapper';
+
         const btn = document.createElement('button');
         btn.className = 'org-card';
         btn.textContent = org;
         btn.onclick = () => App.store.setOrg(org);
-        grid.appendChild(btn);
+        cardWrapper.appendChild(btn);
+
+        if (state.isAdmin) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'org-delete-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.title = `Eliminar ${org}`;
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                App.store.deleteOrganization(org);
+            };
+            cardWrapper.appendChild(deleteBtn);
+        }
+
+        grid.appendChild(cardWrapper);
     });
 
-    wrapper.appendChild(title);
     wrapper.appendChild(grid);
     container.appendChild(wrapper);
 };
@@ -362,12 +423,17 @@ App.toggleAdmin = function (state) {
     if (state.isAdmin) {
         App.store.setAdmin(false);
     } else {
-        const pwd = prompt("Ingrese contraseña de administrador:");
-        if (pwd === App.ADMIN_PASSWORD) {
+        const pass = prompt("Ingrese contraseña de administrador:");
+        if (pass === App.ADMIN_PASSWORD) {
             App.store.setAdmin(true);
-        } else if (pwd !== null) {
+        } else if (pass !== null) {
             alert("Contraseña incorrecta");
         }
+    }
+
+    // If we are on the org selector, we want to stay there but refresh the view
+    if (state.currentOrg === null) {
+        App.render(state);
     }
 };
 

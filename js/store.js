@@ -8,6 +8,7 @@ App.store = {
         employees: [],
         shifts: {},
         tasks: {},
+        organizations: [], // New: dynamic organization list
         currentFilter: 'ALL',
         nextEmployeeId: 500,
         isLoaded: false // Flag to prevent saving before load
@@ -78,6 +79,12 @@ App.store = {
             });
 
             if (allAssigned) {
+                // Modified: Check if current assignment is still valid before re-assigning
+                if (App.isDailyTaskAssignmentValid(day, monthKey, playaEmployees, this.state.shifts, this.state.tasks)) {
+                    console.log(`Day ${day} already has valid tasks, skipping auto-assign.`);
+                    return;
+                }
+
                 console.log(`Auto-assigning tasks for day ${day}...`);
                 App.assignDailyTasks(day, monthKey, playaEmployees, this.state.shifts[monthKey]);
             } else {
@@ -107,6 +114,32 @@ App.store = {
         if (window.db) {
             window.db.ref(`scheduler_data/tasks/${monthKey}`).set(this.state.tasks[monthKey]);
         }
+    },
+
+    addOrganization(name) {
+        if (!name) return;
+        if (this.state.organizations.includes(name)) {
+            alert('La organización ya existe.');
+            return;
+        }
+        this.state.organizations.push(name);
+        this.emitChange('organizations', this.state.organizations);
+    },
+
+    deleteOrganization(name) {
+        if (!confirm(`¿Estás seguro de eliminar la organización "${name}" y todos sus colaboradores?`)) return;
+
+        // Remove from list
+        this.state.organizations = this.state.organizations.filter(o => o !== name);
+
+        // Remove associated employees
+        this.state.employees = this.state.employees.filter(e => e.organization !== name);
+
+        // Note: Shifts and tasks are month-keyed, usually kept as history, 
+        // but cleaning them up globally is complex. For now, removing the org and employees is enough.
+
+        this.emitChange('organizations', this.state.organizations);
+        this.emitChange('employees', this.state.employees);
     },
 
     addEmployee(name, organization, category) {
@@ -190,7 +223,8 @@ App.saveToFirebase = function (path, value) {
             employees: App.store.state.employees,
             shifts: App.store.state.shifts,
             tasks: App.store.state.tasks,
-            nextEmployeeId: App.store.state.nextEmployeeId
+            nextEmployeeId: App.store.state.nextEmployeeId,
+            organizations: App.store.state.organizations // Include organizations in full sync
         };
         console.log('Performing full Firebase sync...');
         window.db.ref('scheduler_data').set(syncData)
@@ -204,7 +238,7 @@ App.normalizeFirebaseData = function (data, path = '') {
 
     // We want to keep 'employees' as a real Array if it comes as one
     if (Array.isArray(data)) {
-        if (path.endsWith('employees')) {
+        if (path.endsWith('employees') || path.endsWith('organizations')) { // Also keep organizations as array
             return data.filter(i => i !== undefined && i !== null).map(i => App.normalizeFirebaseData(i, path));
         }
 
@@ -244,7 +278,10 @@ App.initStore = function () {
     // 2. Sync with Firebase
     if (window.db) {
         console.log('Connecting to Firebase...');
-        window.db.ref('scheduler_data').on('value', (snapshot) => {
+        const db = window.db; // Alias for brevity
+
+        // Listen for main scheduler data
+        db.ref('scheduler_data').on('value', (snapshot) => {
             const rawData = snapshot.val();
             if (rawData) {
                 console.log('Firebase data received - Normalizing...');
@@ -254,6 +291,8 @@ App.initStore = function () {
                     (data.employees ? Object.values(data.employees) : []);
                 App.store.state.shifts = data.shifts || {};
                 App.store.state.tasks = data.tasks || {};
+                App.store.state.organizations = Array.isArray(data.organizations) ? data.organizations :
+                    (data.organizations ? Object.values(data.organizations) : []); // Load organizations
 
                 const maxId = App.store.state.employees.reduce((max, e) => Math.max(max, e.id), 499);
                 App.store.state.nextEmployeeId = Math.max(data.nextEmployeeId || 500, maxId + 1);

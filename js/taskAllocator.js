@@ -29,7 +29,12 @@ App.assignTasksForMonth = function (year, month) {
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-        App.assignDailyTasks(d, monthKey, employees, state.shifts[monthKey]);
+        // Only assign if current assignments are not valid
+        if (!App.isDailyTaskAssignmentValid(d, monthKey, employees, state.shifts, state.tasks)) {
+            App.assignDailyTasks(d, monthKey, employees, state.shifts[monthKey]);
+        } else {
+            console.log(`Day ${d} has a valid task assignment, skipping re-allocation.`);
+        }
     }
 
     App.store.emitChange();
@@ -109,6 +114,75 @@ App.assignDailyTasks = function (day, monthKey, employees, monthlyShifts) {
         if (!state.tasks[monthKey][empId]) state.tasks[monthKey][empId] = {};
         state.tasks[monthKey][empId][day] = dailyAssignments[empId];
     });
+};
+
+App.isDailyTaskAssignmentValid = function (day, monthKey, employees, monthlyShifts, tasks) {
+    if (!monthlyShifts || !tasks[monthKey]) return false;
+
+    let candidates = [];
+    employees.forEach(emp => {
+        const shiftCode = monthlyShifts[emp.id]?.[day];
+        if (App.isWorkingShift(shiftCode)) {
+            candidates.push({ id: emp.id, shift: shiftCode });
+        }
+    });
+
+    if (candidates.length === 0) return true; // No ones working, technically valid
+
+    // 1. Check if all candidates have a task and no non-candidates have tasks
+    for (let emp of employees) {
+        const hasTask = tasks[monthKey][emp.id]?.[day] !== undefined;
+        const isCandidate = candidates.some(c => c.id === emp.id);
+
+        if (isCandidate && !hasTask) return false;
+        if (!isCandidate && hasTask) return false;
+    }
+
+    const dailyTasks = {};
+    candidates.forEach(c => {
+        dailyTasks[c.id] = parseInt(tasks[monthKey][c.id][day]);
+    });
+
+    // 2. Rule 1: Task 4 on 22-06
+    const workers2206 = candidates.filter(c => c.shift === '22-06');
+    const task4Count = Object.values(dailyTasks).filter(v => v === 4).length;
+    if (workers2206.length > 0) {
+        if (task4Count !== 1) return false;
+        const owner = candidates.find(c => dailyTasks[c.id] === 4);
+        if (!owner || owner.shift !== '22-06') return false;
+    } else {
+        if (task4Count !== 0) return false;
+    }
+
+    // 3. Rule 2: Task 3 on 16-00 and 08-16
+    const task3Count = Object.values(dailyTasks).filter(v => v === 3).length;
+    let expected3 = 0;
+
+    const workers1600 = candidates.filter(c => c.shift === '16-00');
+    if (workers1600.length > 0) {
+        expected3++;
+        if (!workers1600.some(w => dailyTasks[w.id] === 3)) return false;
+    }
+
+    const workers0816 = candidates.filter(c => c.shift === '08-16');
+    if (workers0816.length > 0) {
+        expected3++;
+        if (!workers0816.some(w => dailyTasks[w.id] === 3)) return false;
+    }
+
+    if (task3Count !== expected3) return false;
+
+    // 4. Rule 3 & 4: At least one 1 and one 2 if remaining candidates allow
+    const remainingValues = Object.values(dailyTasks).filter(v => v === 1 || v === 2);
+    const pool16 = candidates.filter(c => c.shift !== '22-06' && c.shift !== '16-00' && c.shift !== '08-16');
+
+    if (pool16.length >= 2) {
+        const has1 = remainingValues.includes(1);
+        const has2 = remainingValues.includes(2);
+        if (!has1 || !has2) return false;
+    }
+
+    return true;
 };
 
 App.isWorkingShift = function (code) {
