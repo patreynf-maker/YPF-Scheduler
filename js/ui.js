@@ -49,8 +49,8 @@ App.renderOrgSelector = function (container) {
     adminBtn.innerHTML = state.isAdmin ? '🔓 Admin Activo' : '🔒 Acceso Admin';
     adminBtn.onclick = () => App.toggleAdmin(state);
 
-    headerRow.appendChild(title);
     headerRow.appendChild(adminBtn);
+    headerRow.appendChild(title);
     wrapper.appendChild(headerRow);
 
     // Add Org Form (Admin Only)
