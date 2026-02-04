@@ -149,6 +149,7 @@ App.renderScheduler = function (container, state) {
         <div class="controls">
             ${state.isAdmin ? '<button id="btn-employees">üë• Colaboradores</button>' : ''}
             ${state.isAdmin ? '<button id="btn-tasks">üé≤ Asignar Tareas</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-dashboard">üìä Estad√≠sticas</button>' : ''}
             ${state.isAdmin ? '<button id="btn-propagate" title="Rellenar inicio del pr√≥ximo mes">‚è≠Ô∏è Pr√≥ximo Mes</button>' : ''}
             ${state.isAdmin ? '<button id="btn-export">üì• Exportar</button>' : ''}
         </div>
@@ -158,6 +159,14 @@ App.renderScheduler = function (container, state) {
     header.querySelector('#btn-admin').onclick = () => App.toggleAdmin(state);
     if (header.querySelector('#btn-export')) {
         header.querySelector('#btn-export').onclick = () => App.exportToCSV(state.currentOrg, state.currentDate, employees, state.shifts, state.tasks);
+    }
+
+    if (header.querySelector('#btn-dashboard')) {
+        header.querySelector('#btn-dashboard').onclick = () => App.showDashboard(state.currentOrg, state.currentDate);
+    }
+
+    if (header.querySelector('#btn-dashboard')) {
+        header.querySelector('#btn-dashboard').onclick = () => App.showDashboard(state.currentOrg, state.currentDate);
     }
 
     if (header.querySelector('#btn-propagate')) {
@@ -224,7 +233,12 @@ App.renderScheduler = function (container, state) {
     // Day headers
     days.forEach(day => {
         const th = document.createElement('th');
-        th.className = 'day-header';
+        const dateKey = `${state.currentDate.getFullYear()}-${String(state.currentDate.getMonth() + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`;
+        const holidayName = App.HOLIDAYS[dateKey];
+
+        th.className = `day-header ${day.isSunday ? 'sunday' : ''} ${holidayName ? 'holiday' : ''}`;
+        if (holidayName) th.title = holidayName;
+
         th.innerHTML = `
             <div class="day-num">${day.date}</div>
             <div class="day-name">${day.dayName}</div>
@@ -907,4 +921,492 @@ App.showEditEmployee = function (employee, currentOrg, listContainer) {
     modal.appendChild(content);
     document.body.appendChild(modal);
 };
+
+
+App.showDashboard = function (org, currentDate) {
+    var monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
+    var employees = App.store.getEmployeesByOrg(org);
+    
+    var modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    
+    var rows = employees.map(function(emp) {
+        var stats = App.store.getEmployeeStats(emp.id, monthKey);
+        return '<tr><td><strong>' + emp.name + '</strong></td><td>' + stats.hours + ' hs</td><td>' + stats.sundays + '</td><td>' + stats.holidays + '</td></tr>';
+    }).join('');
+
+    modal.innerHTML = '<div class=\'modal-content dashboard-modal\'><header class=\'modal-header\'><h2>Resumen de EstadÌsticas - ' + App.formatMonthYear(currentDate) + '</h2><button class=\'btn-close\'>&times;</button></header><div class=\'dashboard-grid\'><table><thead><tr><th>Colaborador</th><th>hs. Totales</th><th>Dom. Trabajados</th><th>Fer. Trabajados</th></tr></thead><tbody>' + rows + '</tbody></table></div><div class=\'modal-footer\'><p class=\'stats-note\'>Basado en turnos cargados y dÌas feriados nacionales configurados.</p><button class=\'btn-primary\'>Entendido</button></div></div>';
+
+    modal.querySelector('.btn-close').onclick = function() { modal.remove(); };
+    modal.querySelector('.btn-primary').onclick = function() { modal.remove(); };
+    document.body.appendChild(modal);
+};
+
+App.renderEmployeeLogin = function(container) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'login-container';
+    wrapper.innerHTML = '<h2>Acceso Colaborador</h2><div class=\'form-group\'><select id=\'login-org-select\'><option value=\'\'>Selecciona tu Sucursal</option></select></div><div class=\'form-group\'><select id=\'login-emp-select\' disabled><option value=\'\'>Selecciona tu Nombre</option></select></div><div class=\'form-group\'><input type=\'password\' id=\'login-pin\' placeholder=\'PIN (4 dÌgitos)\' maxlength=\'4\' disabled></div><button id=\'btn-login-enter\' disabled>Ingresar</button><button id=\'btn-login-back\'>Volver</button>';
+
+    var orgSelect = wrapper.querySelector('#login-org-select');
+    var empSelect = wrapper.querySelector('#login-emp-select');
+    var pinInput = wrapper.querySelector('#login-pin');
+    var loginBtn = wrapper.querySelector('#btn-login-enter');
+    var backBtn = wrapper.querySelector('#btn-login-back');
+
+    var orgs = App.store.state.organizations || [];
+    orgs.forEach(function(org) {
+        var opt = document.createElement('option');
+        opt.value = org;
+        opt.textContent = org;
+        orgSelect.appendChild(opt);
+    });
+
+    orgSelect.onchange = function() {
+        empSelect.innerHTML = '<option value=\'\'>Selecciona tu Nombre</option>';
+        if (orgSelect.value) {
+            var emps = App.store.getEmployeesByOrg(orgSelect.value);
+            emps.forEach(function(emp) {
+                var opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = emp.name;
+                empSelect.appendChild(opt);
+            });
+            empSelect.disabled = false;
+        } else {
+            empSelect.disabled = true;
+            pinInput.disabled = true;
+        }
+    };
+
+    empSelect.onchange = function() {
+        pinInput.disabled = !empSelect.value;
+        if (empSelect.value) pinInput.focus();
+    };
+
+    pinInput.oninput = function() {
+        loginBtn.disabled = pinInput.value.length < 4;
+    };
+
+    loginBtn.onclick = function() {
+        var empId = empSelect.value;
+        var pin = pinInput.value;
+        if (App.store.validateEmployeePin(empId, pin)) {
+            var emp = App.store.state.employees.find(function(e) { return e.id == empId; });
+            App.showEmployeePortal(emp);
+        } else {
+            alert('PIN Incorrecto');
+        }
+    };
+
+    backBtn.onclick = function() { App.render(document.getElementById('app'), App.store.state); };
+
+    container.innerHTML = '';
+    container.appendChild(wrapper);
+};
+
+App.showEmployeePortal = function(employee) {
+    var container = document.getElementById('app');
+    container.innerHTML = '';
+
+    var portal = document.createElement('div');
+    portal.className = 'employee-portal';
+    
+    var header = document.createElement('header');
+    header.className = 'portal-header';
+    header.innerHTML = '<div class=\'user-info\'><h2>Hola, ' + employee.name + '</h2><span>' + employee.organization + '</span></div><button id=\'btn-portal-logout\'>Salir</button>';
+    header.querySelector('#btn-portal-logout').onclick = function() { window.location.reload(); };
+    
+    portal.appendChild(header);
+    
+    var wrapper = document.createElement('div');
+    wrapper.style.padding = '20px';
+    wrapper.innerHTML = '<p>Tu calendario se abrir· a continuaciÛn...</p>';
+    portal.appendChild(wrapper);
+    
+    container.appendChild(portal);
+
+    setTimeout(function() {
+        App.showCalendarView(employee, App.store.state);
+    }, 100);
+};
+
+/* PORTAL MODE OVERRIDES */
+
+App.render = function (container, state) {
+    // Save scroll position for scheduler
+    var grid = container.querySelector('.grid-container');
+    var scrollLeft = grid ? grid.scrollLeft : 0;
+    var scrollTop = grid ? grid.scrollTop : 0;
+
+    container.innerHTML = '';
+
+    if (state.isPortalMode && state.portalEmployee) {
+        App.renderEmployeePortal(container, state.portalEmployee);
+    } else if (!state.currentOrg) {
+        App.renderOrgSelector(container);
+    } else {
+        App.renderScheduler(container, state);
+        var newGrid = container.querySelector('.grid-container');
+        if (newGrid) {
+            newGrid.scrollLeft = scrollLeft;
+            newGrid.scrollTop = scrollTop;
+        }
+    }
+};
+
+App.showEmployeePortal = function(employee) {
+    App.store.state.isPortalMode = true;
+    App.store.state.portalEmployee = employee;
+    App.store.emitChange();
+};
+
+App.renderEmployeePortal = function(container, employee) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'employee-portal';
+
+    // Header
+    var header = document.createElement('header');
+    header.className = 'portal-header';
+    header.innerHTML = '<div class=\'user-info\'><h2>Hola, ' + employee.name + '</h2><span>' + employee.organization + '</span></div><div class=\'portal-controls\'><button id=\'btn-portal-share\' title=\'Compartir por WhatsApp\'>??</button><button id=\'btn-portal-logout\'>Salir</button></div>';
+    
+    header.querySelector('#btn-portal-share').onclick = function() {
+        var url = App.generateWhatsAppLink(employee, App.store.state.currentDate, App.store.state.shifts);
+        window.open(url, '_blank');
+    };
+    
+    header.querySelector('#btn-portal-logout').onclick = function() { 
+        App.store.state.isPortalMode = false;
+        App.store.state.portalEmployee = null;
+        window.location.reload(); 
+    };
+    
+    wrapper.appendChild(header);
+
+    // Month Nav
+    var nav = document.createElement('div');
+    nav.className = 'month-nav portal-nav';
+    nav.style.justifyContent = 'center';
+    nav.style.margin = '20px 0';
+    nav.innerHTML = '<button id=\'btn-prev-month\'>&lt;</button><span class=\'date-display\'>' + App.formatMonthYear(App.store.state.currentDate) + '</span><button id=\'btn-next-month\'>&gt;</button>';
+    
+    nav.querySelector('#btn-prev-month').onclick = function() { App.changeMonth(-1); };
+    nav.querySelector('#btn-next-month').onclick = function() { App.changeMonth(1); };
+    
+    wrapper.appendChild(nav);
+
+    // Calendar Request
+    // Reuse showCalendarView logic but append to wrapper instead of modal?
+    // showCalendarView creates a modal. We want inline.
+    // Let's create a container for the calendar.
+    var calContainer = document.createElement('div');
+    calContainer.className = 'portal-calendar-wrapper';
+    wrapper.appendChild(calContainer);
+
+    container.appendChild(wrapper);
+
+    // HACK: Use showCalendarView but hijack the modal creation?
+    // No, better to duplicate the grid rendering logic or refactor.
+    // Given the constraints, I will duplicate the grid rendering part of showCalendarView here for stability.
+    
+    var grid = document.createElement('div');
+    grid.className = 'calendar-grid';
+    grid.style.maxWidth = '100%';
+    grid.style.margin = '0 auto';
+
+    var dayNames = ['Dom', 'Lun', 'Mar', 'MiÈ', 'Jue', 'Vie', 'S·b'];
+    dayNames.forEach(function(d) {
+        var div = document.createElement('div');
+        div.className = 'cal-day-name';
+        div.textContent = d;
+        grid.appendChild(div);
+    });
+
+    var date = App.store.state.currentDate;
+    var year = date.getFullYear();
+    var month = date.getMonth();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var firstDayIndex = new Date(year, month, 1).getDay();
+
+    for (var i = 0; i < firstDayIndex; i++) {
+        var div = document.createElement('div');
+        div.className = 'cal-day-empty';
+        grid.appendChild(div);
+    }
+
+    var monthKey = App.getMonthKey(date);
+    var empShifts = App.store.state.shifts[monthKey] && App.store.state.shifts[monthKey][employee.id] ? App.store.state.shifts[monthKey][employee.id] : {};
+
+    for (var d = 1; d <= daysInMonth; d++) {
+        var div = document.createElement('div');
+        div.className = 'cal-day-cell';
+        
+        var shiftCode = empShifts[d];
+        
+        if (shiftCode) {
+            var shiftInfo = null;
+            var allTypes = (App.SHIFT_TYPES.PLAYA || []).concat(App.SHIFT_TYPES.FULL || []);
+            shiftInfo = allTypes.find(function(s) { return s.code === shiftCode; });
+
+            var label = document.createElement('div');
+            label.className = 'cal-shift-label';
+            if (shiftInfo) {
+                label.style.backgroundColor = shiftInfo.color;
+                label.textContent = shiftInfo.label;
+            } else {
+                label.textContent = shiftCode;
+            }
+
+            var dateDiv = document.createElement('div');
+            dateDiv.className = 'cal-date inside-shift';
+            dateDiv.textContent = d;
+            label.appendChild(dateDiv);
+            div.appendChild(label);
+        } else {
+            var dateDiv = document.createElement('div');
+            dateDiv.className = 'cal-date';
+            dateDiv.textContent = d;
+            div.appendChild(dateDiv);
+        }
+        grid.appendChild(div);
+    }
+    
+    calContainer.appendChild(grid);
+};
+
+
+/* DARK MODE TOGGLE */
+App.initTheme = function() {
+    var savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    
+    // Check if button already exists
+    if (document.getElementById('theme-toggle')) return;
+
+    var btn = document.createElement('button');
+    btn.id = 'theme-toggle';
+    btn.textContent = savedTheme === 'dark' ? '??' : '??';
+    btn.title = 'Cambiar Tema';
+    btn.style.position = 'fixed';
+    btn.style.bottom = '20px';
+    btn.style.right = '20px';
+    btn.style.zIndex = '10000';
+    btn.style.width = '48px';
+    btn.style.height = '48px';
+    btn.style.borderRadius = '50%';
+    btn.style.border = 'none';
+    btn.style.background = 'var(--ypf-header-blue)';
+    btn.style.color = 'white';
+    btn.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+    btn.style.cursor = 'pointer';
+    btn.style.fontSize = '1.5rem';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+    btn.style.transition = 'all 0.3s';
+    
+    btn.onmouseover = function() { btn.style.transform = 'scale(1.1)'; };
+    btn.onmouseout = function() { btn.style.transform = 'scale(1)'; };
+
+    btn.onclick = function() {
+        var current = document.documentElement.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        btn.textContent = next === 'dark' ? '??' : '??';
+    };
+    
+    document.body.appendChild(btn);
+};
+
+// Initialize
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', App.initTheme);
+} else {
+    App.initTheme();
+}
+
+
+App.renderScheduler = function (container, state) {
+    var days = App.getDaysInMonth(state.currentDate);
+    var filter = state.currentFilter || 'ALL';
+    var employees = App.store.getEmployeesByOrg(state.currentOrg);
+    if (filter !== 'ALL') {
+        employees = employees.filter(function(e) { return e.category === filter; });
+    }
+
+    var header = document.createElement('header');
+    header.className = 'app-header';
+    header.innerHTML = '<div class=\'header-main\'><div class=\'title-row\'><h1>Planilla de Horarios</h1><button id=\'btn-admin\' class=\'' + (state.isAdmin ? 'active' : '') + '\'>' + (state.isAdmin ? '?? Salir Admin' : '?? Admin') + '</button></div><div class=\'header-subrow\'><span class=\'org-badge clickable\' title=\'Cambiar OrganizaciÛn\'>' + state.currentOrg + '</span><div class=\'month-nav\'><button id=\'btn-prev-month\'>&lt;</button><span class=\'date-display\'>' + App.formatMonthYear(state.currentDate) + '</span><button id=\'btn-next-month\'>&gt;</button></div></div></div><div class=\'controls\'>' + (state.isAdmin ? '<button id=\'btn-employees\'>?? Colaboradores</button>' : '') + (state.isAdmin ? '<button id=\'btn-tasks\'>?? Asignar Tareas</button>' : '') + (state.isAdmin ? '<button id=\'btn-dashboard\'>?? EstadÌsticas</button>' : '') + (state.isAdmin ? '<button id=\'btn-propagate\' title=\'Rellenar inicio del prÛximo mes\'>?? PrÛximo Mes</button>' : '') + (state.isAdmin ? '<button id=\'btn-export\'>?? Exportar</button>' : '') + '</div>';
+
+    header.querySelector('.org-badge').onclick = function() { App.store.setOrg(null); };
+    header.querySelector('#btn-admin').onclick = function() { App.toggleAdmin(state); };
+    if (header.querySelector('#btn-export')) header.querySelector('#btn-export').onclick = function() { App.exportToCSV(state.currentOrg, state.currentDate, employees, state.shifts, state.tasks); };
+    if (header.querySelector('#btn-dashboard')) header.querySelector('#btn-dashboard').onclick = function() { App.showDashboard(state.currentOrg, state.currentDate); };
+    if (header.querySelector('#btn-audit')) header.querySelector('#btn-audit').onclick = function() { App.showAuditLog(); };
+    if (header.querySelector('#btn-propagate')) header.querySelector('#btn-propagate').onclick = function() { if (confirm('øPropagar turnos al inicio del prÛximo mes?')) App.store.propagateToNextMonth(); };
+    header.querySelector('#btn-prev-month').onclick = function() { App.changeMonth(-1); };
+    header.querySelector('#btn-next-month').onclick = function() { App.changeMonth(1); };
+    if (header.querySelector('#btn-employees')) header.querySelector('#btn-employees').onclick = function() { App.showEmployeeManager(state.currentOrg); };
+    if (header.querySelector('#btn-tasks')) header.querySelector('#btn-tasks').onclick = function() { if (confirm('øGenerar asignaciÛn de tareas autom·ticas?')) App.assignTasksForMonth(state.currentDate.getFullYear(), state.currentDate.getMonth()); };
+
+    var filterBar = document.createElement('div');
+    filterBar.className = 'filter-bar';
+    filterBar.innerHTML = '<button class=\'filter-btn ' + (filter === 'ALL' ? 'active' : '') + '\' data-filter=\'ALL\'>Todos</button><button class=\'filter-btn ' + (filter === App.CATEGORIES.ADMIN ? 'active' : '') + '\' data-filter=\'' + App.CATEGORIES.ADMIN + '\'>AdministraciÛn</button><button class=\'filter-btn ' + (filter === App.CATEGORIES.PLAYA ? 'active' : '') + '\' data-filter=\'' + App.CATEGORIES.PLAYA + '\'>Playa</button><button class=\'filter-btn ' + (filter === App.CATEGORIES.FULL ? 'active' : '') + '\' data-filter=\'' + App.CATEGORIES.FULL + '\'>Full</button>';
+    
+    var btns = filterBar.querySelectorAll('.filter-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].onclick = function() { App.store.state.currentFilter = this.dataset.filter; App.store.emitChange(null, null, false); };
+    }
+
+    var legends = App.renderLegends(filter);
+    var gridContainer = document.createElement('div');
+    gridContainer.className = 'grid-container';
+    var table = document.createElement('table');
+    table.className = 'scheduler-table';
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    
+    var cornerTh = document.createElement('th');
+    cornerTh.className = 'sticky-col corner-header';
+    cornerTh.textContent = 'Colaborador';
+    headerRow.appendChild(cornerTh);
+
+    days.forEach(function(day) {
+        var th = document.createElement('th');
+        var dateKey = App.getMonthKey(state.currentDate) + '-' + String(day.date).padStart(2, '0');
+        var holidayName = App.HOLIDAYS && App.HOLIDAYS[dateKey];
+        th.className = 'day-header ' + (day.fullDate.getDay() === 0 ? 'sunday' : '') + (holidayName ? ' holiday' : '');
+        if (holidayName) th.title = holidayName;
+        th.innerHTML = '<div class=\'day-num\'>' + day.date + '</div><div class=\'day-name\'>' + day.dayName + '</div>';
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    var categories = [App.CATEGORIES.PLAYA, App.CATEGORIES.FULL, App.CATEGORIES.ADMIN];
+    
+    categories.forEach(function(category) {
+        var catEmployees = employees.filter(function(e) { return e.category === category; });
+        if (catEmployees.length > 0) {
+            var catRow = document.createElement('tr');
+            catRow.className = 'category-header-row';
+            catRow.innerHTML = '<td class=\'category-header-cell sticky-col\' colspan=\'' + (days.length + 1) + '\'><span class=\'category-arrow\'>?</span><span class=\'category-name\'>' + category + '</span><span class=\'category-count\'>' + catEmployees.length + '</span></td>';
+            catRow.onclick = function() {
+                var expanded = this.dataset.expanded !== 'false';
+                this.dataset.expanded = expanded ? 'false' : 'true';
+                this.querySelector('.category-arrow').textContent = expanded ? '?' : '?';
+                catEmployees.forEach(function(e) {
+                    var r = tbody.querySelector('tr[data-employee-id=\'' + e.id + '\']');
+                    if (r) r.style.display = expanded ? 'none' : 'table-row';
+                });
+            };
+            tbody.appendChild(catRow);
+
+            catEmployees.forEach(function(emp) {
+                var tr = document.createElement('tr');
+                tr.className = 'employee-row';
+                tr.dataset.employeeId = emp.id;
+                var nameTd = document.createElement('td');
+                nameTd.className = 'sticky-col emp-name';
+                nameTd.textContent = emp.name;
+                nameTd.onclick = function() { App.showCalendarView(emp, state); };
+                tr.appendChild(nameTd);
+
+                var monthKey = App.getMonthKey(state.currentDate);
+                
+                days.forEach(function(day) {
+                    var td = document.createElement('td');
+                    td.className = 'shift-cell';
+                    var shiftCode = state.shifts[monthKey] && state.shifts[monthKey][emp.id] ? state.shifts[monthKey][emp.id][day.date] : null;
+
+                    if (shiftCode) {
+                        var shiftInfo = null;
+                        var allTypes = (App.SHIFT_TYPES.PLAYA || []).concat(App.SHIFT_TYPES.FULL || []);
+                        shiftInfo = allTypes.find(function(s) { return s.code === shiftCode; });
+                        
+                        if (shiftInfo) {
+                            td.style.backgroundColor = shiftInfo.color;
+                            td.textContent = shiftInfo.label;
+                            td.style.color = 'white';
+                        } else {
+                            td.textContent = shiftCode;
+                        }
+                    }
+
+                    td.onclick = function() { App.handleCellClick(emp, day, monthKey, state); };
+
+                    if (state.isAdmin && shiftCode) {
+                        td.draggable = true;
+                        td.ondragstart = function(e) {
+                            e.dataTransfer.setData('application/json', JSON.stringify({
+                                fromEmpId: emp.id,
+                                fromDay: day.date,
+                                shiftCode: shiftCode,
+                                monthKey: monthKey
+                            }));
+                            td.style.opacity = '0.5';
+                        };
+                        td.ondragend = function() { td.style.opacity = '1'; };
+                    }
+                    if (state.isAdmin) {
+                        td.ondragover = function(e) { e.preventDefault(); };
+                        td.ondrop = function(e) {
+                            e.preventDefault();
+                            var data = JSON.parse(e.dataTransfer.getData('application/json'));
+                            if (data && data.monthKey === monthKey) {
+                                App.store.moveShift(data.fromEmpId, data.fromDay, emp.id, day.date, monthKey);
+                            }
+                        };
+                    }
+
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+    });
+
+    table.appendChild(tbody);
+    gridContainer.appendChild(table);
+    container.appendChild(header);
+    container.appendChild(filterBar);
+    if (legends) container.appendChild(legends);
+    container.appendChild(gridContainer);
+};
+
+
+App.showAuditLog = function() {
+    var logs = App.store.state.logs || [];
+    
+    var modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    
+    var logRows = logs.map(function(log) {
+        var date = new Date(log.timestamp).toLocaleString();
+        return '<tr><td>' + date + '</td><td>' + log.action + '</td><td>' + log.details + '</td></tr>';
+    }).join('');
+
+    if (logs.length === 0) {
+        logRows = '<tr><td colspan=\'3\' style=\'text-align:center\'>No hay cambios recientes registrados.</td></tr>';
+    }
+
+    modal.innerHTML = '<div class=\'modal-content dashboard-modal\'><header class=\'modal-header\'><h2>Historial de Cambios</h2><button class=\'btn-close\'>&times;</button></header><div class=\'dashboard-grid\'><table><thead><tr><th>Fecha/Hora</th><th>AcciÛn</th><th>Detalle</th></tr></thead><tbody>' + logRows + '</tbody></table></div></div>';
+
+    modal.querySelector('.btn-close').onclick = function() { modal.remove(); };
+    document.body.appendChild(modal);
+};
+
+
+// Attach listener for Audit button (this needs to be inside render really, but since I'm appending code, I rely on the fact that I replaced the HTML above, 
+// and now I need to ensure the listener is attached. 
+// However, 'renderScheduler' rebuilds the DOM. So adding a listener here at the end wont work for dynamic elements.
+// I must inject the listener logic into the renderScheduler function.
+// Since I cannot effectively edit the middle of the file blindly with Add-Content, and replace is risky for logic blocks...
+// I will patch 'App.renderScheduler' by redefining it?? No that's huge.
+
+// Alternative: I replaced the HTML string. Now I need to inject the onclick handler.
+// I will use a regex replace to add the handler line.
 

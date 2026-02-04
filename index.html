@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shift Scheduler - YPF</title>
+    <title>Shift Scheduler</title>
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/employee-manager.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#003D82">
 </head>
 
 <body>
@@ -15,8 +17,16 @@
         <div class="loading">Cargando sistema...</div>
     </div>
 
+    <!-- Scripts -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch(err => console.log('SW Registration Failed', err));
+        }
+    </script>
     <!-- Firebase SDK (Compat version for easier integration) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <!-- Scripts loaded in dependency order -->

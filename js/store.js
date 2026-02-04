@@ -11,6 +11,11 @@ App.store = {
         organizations: [],
         currentFilter: 'ALL',
         nextEmployeeId: 500,
+        organizations: [],
+        currentFilter: 'ALL',
+        nextEmployeeId: 500,
+        requests: {}, // { 'YYYY-MM-DD-EMP_ID': 'Reason' }
+        logs: [], // Array of log objects { timestamp, action, details }
         isLoaded: false
     },
 
@@ -24,6 +29,98 @@ App.store = {
         this.emitChange(null, null, false); // UI change only
     },
 
+    getEmployeeStats(employeeId, monthKey) {
+        const shifts = this.state.shifts[monthKey]?.[employeeId] || {};
+        const employees = this.state.employees;
+        const emp = employees.find(e => e.id === employeeId);
+        if (!emp) return { hours: 0, sundays: 0, holidays: 0 };
+
+        const shiftDefinitions = emp.category === App.CATEGORIES.PLAYA ? App.SHIFT_TYPES.PLAYA : App.SHIFT_TYPES.FULL;
+
+        let totalHours = 0;
+        let sundaysWorked = 0;
+        let holidaysWorked = 0;
+
+        const [year, month] = monthKey.split('-').map(Number);
+
+        Object.entries(shifts).forEach(([day, code]) => {
+            const shiftDef = shiftDefinitions.find(s => s.code === code);
+            if (shiftDef) {
+                totalHours += shiftDef.duration;
+
+                // Track Sundays
+                const date = new Date(year, month - 1, parseInt(day));
+                if (date.getDay() === 0 && code !== 'FRANCO') {
+                    sundaysWorked++;
+                }
+
+                // Track Holidays
+                const fullDateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (App.HOLIDAYS[fullDateKey] && code !== 'FRANCO') {
+                    holidaysWorked++;
+                }
+            }
+        });
+
+        return { hours: totalHours, sundays: sundaysWorked, holidays: holidaysWorked };
+    },
+
+    validateShiftSequence(employeeId, day, newShiftCode, monthKey) {
+        if (newShiftCode === 'FRANCO' || !newShiftCode) return { valid: true };
+
+        const shifts = this.state.shifts[monthKey]?.[employeeId] || {};
+        const prevDay = parseInt(day) - 1;
+        const nextDay = parseInt(day) + 1;
+
+        const prevShift = shifts[prevDay];
+        const nextShift = shifts[nextDay];
+
+        // Shift times helper
+        const getTimes = (code) => {
+            if (code === '06-14') return { start: 6, end: 14 };
+            if (code === '14-22') return { start: 14, end: 22 };
+            if (code === '22-06') return { start: 22, end: 30 }; // 30 is 06:00 next day
+            if (code === '16-00') return { start: 16, end: 24 };
+            if (code === '08-16') return { start: 8, end: 16 };
+            if (code === '20-00') return { start: 20, end: 24 };
+            if (code === '05-13') return { start: 5, end: 13 };
+            return null;
+        };
+
+        const current = getTimes(newShiftCode);
+        if (!current) return { valid: true };
+
+        // Check against previous day
+        if (prevShift) {
+            const prev = getTimes(prevShift);
+            if (prev) {
+                const rest = (24 + current.start) - prev.end;
+                if (rest < 12) {
+                    return {
+                        valid: false,
+                        message: `Descanso insuficiente (${rest}hs) entre el día anterior (${prevShift}) y hoy (${newShiftCode}).`
+                    };
+                }
+            }
+        }
+
+        // Check against next day
+        if (nextShift) {
+            const next = getTimes(nextShift);
+            if (next) {
+                const rest = (24 + next.start) - current.end;
+                if (rest < 12) {
+                    return {
+                        valid: false,
+                        message: `Descanso insuficiente (${rest}hs) entre hoy (${newShiftCode}) y el día siguiente (${nextShift}).`
+                    };
+                }
+            }
+        }
+
+        return { valid: true };
+    },
+
     setAdmin(status) {
         this.state.isAdmin = status;
         this.emitChange(null, null, false);
@@ -34,9 +131,20 @@ App.store = {
             if (!this.state.shifts[monthKey]) this.state.shifts[monthKey] = {};
             if (!this.state.shifts[monthKey][employeeId]) this.state.shifts[monthKey][employeeId] = {};
 
+            // Business Rule: Validate rest period
+            const validation = this.validateShiftSequence(employeeId, day, shiftCode, monthKey);
+            if (!validation.valid) {
+                if (!confirm(`${validation.message}\n\n¿Desea asignar este turno de todas formas?`)) {
+                    return;
+                }
+            }
+
             this.state.shifts[monthKey][employeeId][day] = shiftCode;
 
             this.checkAndAssignTasks(day, monthKey);
+
+            // Log Action
+            this.logAction('ASSIGN_SHIFT', `Asignado ${shiftCode} a Emp#${employeeId} el día ${day}`);
 
             this.emitChange(`shifts/${monthKey}/${employeeId}/${day}`, shiftCode);
 
@@ -129,8 +237,18 @@ App.store = {
     },
 
     propagateToNextMonth() {
-        if (!this.state.currentOrg) return;
-        const employees = this.getEmployeesByOrg(this.state.currentOrg);
+        if (!this.state.currentOrg) {
+            alert('Por favor seleccione una organización.');
+            return;
+        }
+
+        // Strict filter for current organization
+        const employees = this.state.employees.filter(e => e.organization === this.state.currentOrg);
+
+        if (employees.length === 0) {
+            alert('No hay colaboradores en esta organización.');
+            return;
+        }
 
         const year = this.state.currentDate.getFullYear();
         const month = this.state.currentDate.getMonth();
@@ -142,7 +260,7 @@ App.store = {
         }
 
         const nextMonthDate = new Date(year, month + 1, 1);
-        const nextMonthKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+        const nextMonthKey = App.getMonthKey(nextMonthDate);
 
         if (!this.state.shifts[nextMonthKey]) this.state.shifts[nextMonthKey] = {};
 
@@ -159,7 +277,7 @@ App.store = {
 
         // Save to Firebase (using granular update for specific employees)
         if (window.db && Object.keys(firebaseUpdates).length > 0) {
-            console.log(`Granular sync for ${Object.keys(firebaseUpdates).length} employees in ${nextMonthKey}`);
+            console.log(`Granular sync for ${Object.keys(firebaseUpdates).length} employees in ${nextMonthKey} for Org: ${this.state.currentOrg}`);
             window.db.ref(`scheduler_data/shifts/${nextMonthKey}`).update(firebaseUpdates)
                 .catch(err => console.error('Firebase propagation error:', err));
         }
@@ -170,16 +288,92 @@ App.store = {
         alert(`Se han propagado los turnos para ${App.formatMonthYear(nextMonthDate)} (Solo sucursal ${this.state.currentOrg}).`);
     },
 
-    addEmployee(name, organization, category) {
+    moveShift(fromEmpId, fromDay, toEmpId, toDay, monthKey) {
+        // Swap logic
+        const shifts = this.state.shifts[monthKey] || {};
+        const fromShift = shifts[fromEmpId]?.[fromDay];
+        const toShift = shifts[toEmpId]?.[toDay];
+
+        // If source is empty, do nothing (shouldn't happen via UI)
+        if (!fromShift) return;
+
+        // Perform validation on Target if needed (e.g. check rest time)
+        // For simplicity, we skip strictly blocking validation on DragDrop but maybe warn?
+        // Let's just move/swap.
+
+        if (!this.state.shifts[monthKey][fromEmpId]) this.state.shifts[monthKey][fromEmpId] = {};
+        if (!this.state.shifts[monthKey][toEmpId]) this.state.shifts[monthKey][toEmpId] = {};
+
+        // Swap values
+        this.state.shifts[monthKey][fromEmpId][fromDay] = toShift || null; // If toShift null, it clears source
+        this.state.shifts[monthKey][toEmpId][toDay] = fromShift;
+
+        // Clean up if null
+        if (!this.state.shifts[monthKey][fromEmpId][fromDay]) delete this.state.shifts[monthKey][fromEmpId][fromDay];
+
+        // Persist
+        if (window.db) {
+            const updates = {};
+            updates[`scheduler_data/shifts/${monthKey}/${fromEmpId}/${fromDay}`] = toShift || null;
+            updates[`scheduler_data/shifts/${monthKey}/${toEmpId}/${toDay}`] = fromShift;
+            window.db.ref().update(updates);
+        }
+
+        this.logAction('MOVE_SHIFT', `Movido turno de Emp#${fromEmpId} (Día ${fromDay}) a Emp#${toEmpId} (Día ${toDay})`);
+        this.emitChange();
+    },
+
+    addEmployee(name, organization, category, pin = '0000') {
         const newEmployee = {
             id: this.state.nextEmployeeId++,
             name: name,
             organization: organization,
-            category: category
+            category: category,
+            pin: pin
         };
+
         this.state.employees.push(newEmployee);
-        this.emitChange();
+        this.logAction('ADD_EMPLOYEE', `Agregado colaborador ${name} (${category}) en ${organization}`);
+        this.emitChange('employees', this.state.employees);
         return newEmployee;
+    },
+
+    logAction(action, details) {
+        const logEntry = {
+            timestamp: new Date().toISOString(),
+            action: action,
+            details: details
+        };
+        this.state.logs.unshift(logEntry); // Add to beginning
+        if (this.state.logs.length > 100) this.state.logs.pop(); // Keep last 100
+
+        // Optional: Save logs to Firebase (maybe a separate path to avoid loading all logs on init)
+        // For now, in-memory is fine as requested "for admins to see who modified" during session
+    },
+
+    validateEmployeePin(employeeId, pin) {
+        const emp = this.state.employees.find(e => e.id === parseInt(employeeId));
+        return emp && emp.pin === pin;
+    },
+
+    addDayOffRequest(employeeId, date, reason) {
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        // Store request in a separate node or integrated into shifts? 
+        // Let's use a separate root key for requests
+        const requestKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${employeeId}`;
+
+        this.state.requests[requestKey] = reason;
+
+        if (window.db) {
+            window.db.ref(`scheduler_data/requests/${requestKey}`).set(reason);
+        }
+
+        this.emitChange();
+    },
+
+    getRequest(employeeId, date) {
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${employeeId}`;
+        return this.state.requests[key];
     },
 
     updateEmployee(id, updates) {

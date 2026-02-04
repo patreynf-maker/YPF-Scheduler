@@ -1036,3 +1036,179 @@
         right: 2px;
     }
 }
+/* Dashboard & Holidays */
+.dashboard-modal {
+    max-width: 700px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dashboard-grid {
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.dashboard-modal table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dashboard-modal th {
+    text-align: left;
+    padding: 12px;
+    background: var(--ypf-background);
+    border-bottom: 2px solid var(--ypf-grey-light);
+    color: var(--ypf-grey-dark);
+}
+
+.dashboard-modal td {
+    padding: 12px;
+    border-bottom: 1px solid var(--ypf-grey-light);
+}
+
+.stats-note {
+    color: var(--ypf-grey-medium);
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    background: var(--ypf-background);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--ypf-grey-light);
+}
+
+.btn-primary {
+    background: var(--ypf-header-blue);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background: var(--ypf-blue-dark);
+}
+
+.day-header.holiday {
+    background: #FFEBEE !important; /* Red tint for holidays */
+    color: #C62828 !important;
+    border-bottom: 3px solid #FFCDD2;
+}
+
+.day-header.holiday .day-num {
+    color: #D32F2F;
+}
+
+
+/* Employee Login & Portal */
+.login-container {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+}
+
+.login-container h2 {
+    color: var(--ypf-header-blue);
+    margin-bottom: 24px;
+}
+
+.login-container .form-group {
+    margin-bottom: 16px;
+}
+
+.login-container select,
+.login-container input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--ypf-grey-light);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+}
+
+.login-container button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+#btn-login-enter {
+    background: var(--ypf-blue-light);
+    color: white;
+}
+
+#btn-login-enter:disabled {
+    background: var(--ypf-grey-light);
+    cursor: not-allowed;
+}
+
+#btn-login-back {
+    background: transparent;
+    color: var(--ypf-grey-medium);
+    margin-top: 10px;
+}
+
+.employee-portal {
+    background: var(--ypf-background);
+    min-height: 100vh;
+}
+
+.portal-header {
+    background: var(--ypf-header-blue);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-md);
+}
+
+.portal-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.portal-header span {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+#btn-portal-logout {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+
+.portal-controls {
+    display: flex;
+    gap: 10px;
+}
+
+#btn-portal-share {
+    background: #25D366; /* WhatsApp Green */
+    color: white;
+    font-size: 1.2rem;
+    padding: 4px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
