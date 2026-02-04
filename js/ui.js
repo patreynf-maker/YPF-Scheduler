@@ -149,6 +149,7 @@ App.renderScheduler = function (container, state) {
         <div class="controls">
             ${state.isAdmin ? '<button id="btn-employees">👥 Colaboradores</button>' : ''}
             ${state.isAdmin ? '<button id="btn-tasks">🎲 Asignar Tareas</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-propagate" title="Rellenar inicio del próximo mes">⏭️ Próximo Mes</button>' : ''}
             ${state.isAdmin ? '<button id="btn-export">📥 Exportar</button>' : ''}
         </div>
     `;
@@ -157,6 +158,14 @@ App.renderScheduler = function (container, state) {
     header.querySelector('#btn-admin').onclick = () => App.toggleAdmin(state);
     if (header.querySelector('#btn-export')) {
         header.querySelector('#btn-export').onclick = () => App.exportToCSV(state.currentOrg, state.currentDate, employees, state.shifts, state.tasks);
+    }
+
+    if (header.querySelector('#btn-propagate')) {
+        header.querySelector('#btn-propagate').onclick = () => {
+            if (confirm('¿Propagar turnos al inicio del próximo mes siguiendo los patrones actuales?')) {
+                App.store.propagateToNextMonth();
+            }
+        };
     }
 
     header.querySelector('#btn-prev-month').onclick = () => App.changeMonth(-1);

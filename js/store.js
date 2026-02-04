@@ -128,6 +128,41 @@ App.store = {
         this.emitChange('employees', this.state.employees);
     },
 
+    propagateToNextMonth() {
+        if (!this.state.currentOrg) return;
+        const employees = this.getEmployeesByOrg(this.state.currentOrg);
+
+        const year = this.state.currentDate.getFullYear();
+        const month = this.state.currentDate.getMonth();
+
+        if (!App.isMonthCompleteForOrg(employees, year, month, this.state.shifts)) {
+            alert('Error: La planilla del mes actual debe estar completa para todos los colaboradores antes de continuar.');
+            return;
+        }
+
+        const nextMonthDate = new Date(year, month + 1, 1);
+        const nextMonthKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+        if (!this.state.shifts[nextMonthKey]) this.state.shifts[nextMonthKey] = {};
+
+        employees.forEach(emp => {
+            const predictions = App.predictNextMonthShifts(emp.id, year, month, this.state.shifts);
+            if (Object.keys(predictions).length > 0) {
+                this.state.shifts[nextMonthKey][emp.id] = predictions;
+            }
+        });
+
+        // Save to Firebase (using full save as it's a new month key usually)
+        if (window.db) {
+            window.db.ref(`scheduler_data/shifts/${nextMonthKey}`).set(this.state.shifts[nextMonthKey]);
+        }
+
+        // Navigate to next month
+        this.state.currentDate = nextMonthDate;
+        this.emitChange();
+        alert(`Se han propagado los turnos para ${App.formatMonthYear(nextMonthDate)}.`);
+    },
+
     addEmployee(name, organization, category) {
         const newEmployee = {
             id: this.state.nextEmployeeId++,
