@@ -11,9 +11,6 @@ App.store = {
         organizations: [],
         currentFilter: 'ALL',
         nextEmployeeId: 500,
-        organizations: [],
-        currentFilter: 'ALL',
-        nextEmployeeId: 500,
         requests: {}, // { 'YYYY-MM-DD-EMP_ID': 'Reason' }
         logs: [], // Array of log objects { timestamp, action, details }
         isLoaded: false

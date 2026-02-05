@@ -1395,18 +1395,5 @@ App.showAuditLog = function() {
 
     modal.innerHTML = '<div class=\'modal-content dashboard-modal\'><header class=\'modal-header\'><h2>Historial de Cambios</h2><button class=\'btn-close\'>&times;</button></header><div class=\'dashboard-grid\'><table><thead><tr><th>Fecha/Hora</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>' + logRows + '</tbody></table></div></div>';
 
-    modal.querySelector('.btn-close').onclick = function() { modal.remove(); };
-    document.body.appendChild(modal);
+    modal.querySelector('.btn-close').onclick = function() { modal.remove(); };    document.body.appendChild(modal);
 };
-
-
-// Attach listener for Audit button (this needs to be inside render really, but since I'm appending code, I rely on the fact that I replaced the HTML above, 
-// and now I need to ensure the listener is attached. 
-// However, 'renderScheduler' rebuilds the DOM. So adding a listener here at the end wont work for dynamic elements.
-// I must inject the listener logic into the renderScheduler function.
-// Since I cannot effectively edit the middle of the file blindly with Add-Content, and replace is risky for logic blocks...
-// I will patch 'App.renderScheduler' by redefining it?? No that's huge.
-
-// Alternative: I replaced the HTML string. Now I need to inject the onclick handler.
-// I will use a regex replace to add the handler line.
-
