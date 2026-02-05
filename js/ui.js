@@ -273,7 +273,7 @@ App.renderScheduler = function (container, state) {
             categoryCell.className = 'category-header-cell sticky-col';
             categoryCell.colSpan = days.length + 1;
             categoryCell.innerHTML = `
-                <span class="category-arrow">\u00E2\u2013\u00BC</span>
+                <span class="category-arrow">\u25BC</span>
                 <span class="category-name">${category}</span>
                 <span class="category-count">${categoryEmployees.length}</span>
             `;
@@ -282,7 +282,7 @@ App.renderScheduler = function (container, state) {
             categoryCell.onclick = () => {
                 const isExpanded = categoryRow.dataset.expanded === 'true';
                 categoryRow.dataset.expanded = isExpanded ? 'false' : 'true';
-                categoryCell.querySelector('.category-arrow').textContent = isExpanded ? '\u00E2\u2013\u00B6' : '\u00E2\u2013\u00BC';
+                categoryCell.querySelector('.category-arrow').textContent = isExpanded ? '\u25B6' : '\u25BC';
 
                 // Toggle visibility of employee rows
                 categoryEmployees.forEach(emp => {
@@ -829,7 +829,7 @@ App.refreshEmployeeList = function (currentOrg, container) {
                 const categoryHeader = document.createElement('div');
                 categoryHeader.className = 'employee-category-header';
                 categoryHeader.innerHTML = `
-                    <span class="category-arrow">\u00E2\u2013\u00BC</span>
+                    <span class="category-arrow">\u25BC</span>
                     <span class="category-name">${category}</span>
                     <span class="category-count">(${categoryEmployees.length})</span>
                 `;
@@ -869,7 +869,7 @@ App.refreshEmployeeList = function (currentOrg, container) {
                     const isExpanded = categoryHeader.dataset.expanded === 'true';
                     categoryHeader.dataset.expanded = isExpanded ? 'false' : 'true';
                     categoryContent.style.display = isExpanded ? 'none' : 'block';
-                    categoryHeader.querySelector('.category-arrow').textContent = isExpanded ? '\u00E2\u2013\u00B6' : '\u00E2\u2013\u00BC';
+                    categoryHeader.querySelector('.category-arrow').textContent = isExpanded ? '\u25B6' : '\u25BC';
                 };
 
                 categorySection.appendChild(categoryHeader);
