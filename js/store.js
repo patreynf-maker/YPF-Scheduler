@@ -1,4 +1,4 @@
-window.App = window.App || {};
+﻿window.App = window.App || {};
 
 App.store = {
     state: {
@@ -95,7 +95,7 @@ App.store = {
                 if (rest < 12) {
                     return {
                         valid: false,
-                        message: `Descanso insuficiente (${rest}hs) entre el día anterior (${prevShift}) y hoy (${newShiftCode}).`
+                        message: `Descanso insuficiente (${rest}hs) entre el dÃ­a anterior (${prevShift}) y hoy (${newShiftCode}).`
                     };
                 }
             }
@@ -109,7 +109,7 @@ App.store = {
                 if (rest < 12) {
                     return {
                         valid: false,
-                        message: `Descanso insuficiente (${rest}hs) entre hoy (${newShiftCode}) y el día siguiente (${nextShift}).`
+                        message: `Descanso insuficiente (${rest}hs) entre hoy (${newShiftCode}) y el dÃ­a siguiente (${nextShift}).`
                     };
                 }
             }
@@ -131,7 +131,7 @@ App.store = {
             // Business Rule: Validate rest period
             const validation = this.validateShiftSequence(employeeId, day, shiftCode, monthKey);
             if (!validation.valid) {
-                if (!confirm(`${validation.message}\n\n¿Desea asignar este turno de todas formas?`)) {
+                if (!confirm(`${validation.message}\n\nÂ¿Desea asignar este turno de todas formas?`)) {
                     return;
                 }
             }
@@ -141,7 +141,7 @@ App.store = {
             this.checkAndAssignTasks(day, monthKey);
 
             // Log Action
-            this.logAction('ASSIGN_SHIFT', `Asignado ${shiftCode} a Emp#${employeeId} el día ${day}`);
+            this.logAction('ASSIGN_SHIFT', `Asignado ${shiftCode} a Emp#${employeeId} el dÃ­a ${day}`);
 
             this.emitChange(`shifts/${monthKey}/${employeeId}/${day}`, shiftCode);
 
@@ -215,7 +215,7 @@ App.store = {
         }
 
         if (this.state.organizations.includes(name)) {
-            alert('La organización ya existe.');
+            alert('La organizaciÃ³n ya existe.');
             return;
         }
 
@@ -224,7 +224,7 @@ App.store = {
     },
 
     deleteOrganization(name) {
-        if (!confirm(`¿Estás seguro de eliminar la organización "${name}" y todos sus colaboradores?`)) return;
+        if (!confirm(`Â¿EstÃ¡s seguro de eliminar la organizaciÃ³n "${name}" y todos sus colaboradores?`)) return;
 
         this.state.organizations = this.state.organizations.filter(o => o !== name);
         this.state.employees = this.state.employees.filter(e => e.organization !== name);
@@ -235,7 +235,7 @@ App.store = {
 
     propagateToNextMonth() {
         if (!this.state.currentOrg) {
-            alert('Por favor seleccione una organización.');
+            alert('Por favor seleccione una organizaciÃ³n.');
             return;
         }
 
@@ -243,7 +243,7 @@ App.store = {
         const employees = this.state.employees.filter(e => e.organization === this.state.currentOrg);
 
         if (employees.length === 0) {
-            alert('No hay colaboradores en esta organización.');
+            alert('No hay colaboradores en esta organizaciÃ³n.');
             return;
         }
 
@@ -316,7 +316,7 @@ App.store = {
             window.db.ref().update(updates);
         }
 
-        this.logAction('MOVE_SHIFT', `Movido turno de Emp#${fromEmpId} (Día ${fromDay}) a Emp#${toEmpId} (Día ${toDay})`);
+        this.logAction('MOVE_SHIFT', `Movido turno de Emp#${fromEmpId} (DÃ­a ${fromDay}) a Emp#${toEmpId} (DÃ­a ${toDay})`);
         this.emitChange();
     },
 
@@ -540,3 +540,4 @@ App.saveStore = function () {
     };
     localStorage.setItem('shift_scheduler_data', JSON.stringify(context));
 };
+

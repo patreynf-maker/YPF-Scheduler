@@ -1,4 +1,4 @@
-window.App = window.App || {};
+﻿window.App = window.App || {};
 
 App.renderApp = function () {
     const app = document.getElementById('app');
@@ -46,7 +46,7 @@ App.renderOrgSelector = function (container) {
 
     const adminBtn = document.createElement('button');
     adminBtn.className = `btn-admin-login ${state.isAdmin ? 'active' : ''}`;
-    adminBtn.innerHTML = state.isAdmin ? '🔓 Admin Activo' : '🔒 Acceso Admin';
+    adminBtn.innerHTML = state.isAdmin ? 'ðŸ”“ Admin Activo' : 'ðŸ”’ Acceso Admin';
     adminBtn.onclick = () => App.toggleAdmin(state);
 
     headerRow.appendChild(adminBtn);
@@ -100,7 +100,7 @@ App.renderOrgSelector = function (container) {
         if (state.isAdmin) {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'org-delete-btn';
-            deleteBtn.innerHTML = '×';
+            deleteBtn.innerHTML = 'Ã—';
             deleteBtn.title = `Eliminar ${org}`;
             deleteBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -113,6 +113,14 @@ App.renderOrgSelector = function (container) {
     });
 
     wrapper.appendChild(grid);
+
+    // Employee Login Button
+    const employeeLoginBtn = document.createElement('button');
+    employeeLoginBtn.className = 'btn-employee-login';
+    employeeLoginBtn.textContent = '👤 Soy Colaborador';
+    employeeLoginBtn.onclick = () => App.renderEmployeeLogin(container);
+    wrapper.appendChild(employeeLoginBtn);
+
     container.appendChild(wrapper);
 };
 
@@ -134,11 +142,11 @@ App.renderScheduler = function (container, state) {
             <div class="title-row">
                 <h1>Planilla de Horarios</h1>
                 <button id="btn-admin" class="${state.isAdmin ? 'active' : ''}">
-                    ${state.isAdmin ? '🔓 Salir Admin' : '🔒 Admin'}
+                    ${state.isAdmin ? 'ðŸ”“ Salir Admin' : 'ðŸ”’ Admin'}
                 </button>
             </div>
             <div class="header-subrow">
-                <span class="org-badge clickable" title="Cambiar Organización">${state.currentOrg}</span>
+                <span class="org-badge clickable" title="Cambiar OrganizaciÃ³n">${state.currentOrg}</span>
                 <div class="month-nav">
                     <button id="btn-prev-month">&lt;</button>
                     <span class="date-display">${App.formatMonthYear(state.currentDate)}</span>
@@ -147,11 +155,11 @@ App.renderScheduler = function (container, state) {
             </div>
         </div>
         <div class="controls">
-            ${state.isAdmin ? '<button id="btn-employees">👥 Colaboradores</button>' : ''}
-            ${state.isAdmin ? '<button id="btn-tasks">🎲 Asignar Tareas</button>' : ''}
-            ${state.isAdmin ? '<button id="btn-dashboard">📊 Estadísticas</button>' : ''}
-            ${state.isAdmin ? '<button id="btn-propagate" title="Rellenar inicio del próximo mes">⏭️ Próximo Mes</button>' : ''}
-            ${state.isAdmin ? '<button id="btn-export">📥 Exportar</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-employees">ðŸ‘¥ Colaboradores</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-tasks">ðŸŽ² Asignar Tareas</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-dashboard">ðŸ“Š EstadÃ­sticas</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-propagate" title="Rellenar inicio del prÃ³ximo mes">â­ï¸ PrÃ³ximo Mes</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-export">ðŸ“¥ Exportar</button>' : ''}
         </div>
     `;
 
@@ -171,7 +179,7 @@ App.renderScheduler = function (container, state) {
 
     if (header.querySelector('#btn-propagate')) {
         header.querySelector('#btn-propagate').onclick = () => {
-            if (confirm('¿Propagar turnos al inicio del próximo mes siguiendo los patrones actuales?')) {
+            if (confirm('Â¿Propagar turnos al inicio del prÃ³ximo mes siguiendo los patrones actuales?')) {
                 App.store.propagateToNextMonth();
             }
         };
@@ -186,7 +194,7 @@ App.renderScheduler = function (container, state) {
 
     if (header.querySelector('#btn-tasks')) {
         header.querySelector('#btn-tasks').onclick = () => {
-            if (confirm('¿Generar asignación de tareas automáticas para todo el mes? Esto sobrescribirá las tareas existentes.')) {
+            if (confirm('Â¿Generar asignaciÃ³n de tareas automÃ¡ticas para todo el mes? Esto sobrescribirÃ¡ las tareas existentes.')) {
                 App.assignTasksForMonth(state.currentDate.getFullYear(), state.currentDate.getMonth());
             }
         };
@@ -197,7 +205,7 @@ App.renderScheduler = function (container, state) {
     filterBar.className = 'filter-bar';
     filterBar.innerHTML = `
         <button class="filter-btn ${filter === 'ALL' ? 'active' : ''}" data-filter="ALL">Todos</button>
-        <button class="filter-btn ${filter === App.CATEGORIES.ADMIN ? 'active' : ''}" data-filter="${App.CATEGORIES.ADMIN}">Administración</button>
+        <button class="filter-btn ${filter === App.CATEGORIES.ADMIN ? 'active' : ''}" data-filter="${App.CATEGORIES.ADMIN}">AdministraciÃ³n</button>
         <button class="filter-btn ${filter === App.CATEGORIES.PLAYA ? 'active' : ''}" data-filter="${App.CATEGORIES.PLAYA}">Playa</button>
         <button class="filter-btn ${filter === App.CATEGORIES.FULL ? 'active' : ''}" data-filter="${App.CATEGORIES.FULL}">Full</button>
     `;
@@ -269,7 +277,7 @@ App.renderScheduler = function (container, state) {
             categoryCell.className = 'category-header-cell sticky-col';
             categoryCell.colSpan = days.length + 1;
             categoryCell.innerHTML = `
-                <span class="category-arrow">▼</span>
+                <span class="category-arrow">â–¼</span>
                 <span class="category-name">${category}</span>
                 <span class="category-count">${categoryEmployees.length}</span>
             `;
@@ -278,7 +286,7 @@ App.renderScheduler = function (container, state) {
             categoryCell.onclick = () => {
                 const isExpanded = categoryRow.dataset.expanded === 'true';
                 categoryRow.dataset.expanded = isExpanded ? 'false' : 'true';
-                categoryCell.querySelector('.category-arrow').textContent = isExpanded ? '▶' : '▼';
+                categoryCell.querySelector('.category-arrow').textContent = isExpanded ? 'â–¶' : 'â–¼';
 
                 // Toggle visibility of employee rows
                 categoryEmployees.forEach(emp => {
@@ -409,7 +417,7 @@ App.renderLegends = function (filter) {
 
         const taskTitle = document.createElement('div');
         taskTitle.className = 'legend-title';
-        taskTitle.textContent = 'Asignación de Tareas Playa';
+        taskTitle.textContent = 'AsignaciÃ³n de Tareas Playa';
 
         const taskItems = document.createElement('div');
         taskItems.className = 'legend-items';
@@ -446,11 +454,11 @@ App.toggleAdmin = function (state) {
     if (state.isAdmin) {
         App.store.setAdmin(false);
     } else {
-        const pass = prompt("Ingrese contraseña de administrador:");
+        const pass = prompt("Ingrese contraseÃ±a de administrador:");
         if (pass === App.ADMIN_PASSWORD) {
             App.store.setAdmin(true);
         } else if (pass !== null) {
-            alert("Contraseña incorrecta");
+            alert("ContraseÃ±a incorrecta");
         }
     }
 
@@ -498,7 +506,7 @@ App.showShiftPickerModal = function (employee, day, options) {
 
     const subtitle = document.createElement('div');
     subtitle.className = 'modal-subtitle';
-    subtitle.textContent = `${employee.name} - Día ${day.date}`;
+    subtitle.textContent = `${employee.name} - DÃ­a ${day.date}`;
 
     const grid = document.createElement('div');
     grid.className = 'shift-options-grid';
@@ -528,7 +536,7 @@ App.showShiftPickerModal = function (employee, day, options) {
                 });
 
                 if (!allAssigned) {
-                    console.log("Día aún incompleto, no se asignarán tareas hasta completar todos los colaboradores.");
+                    console.log("DÃ­a aÃºn incompleto, no se asignarÃ¡n tareas hasta completar todos los colaboradores.");
                 }
 
                 modal.remove();
@@ -605,7 +613,7 @@ App.showCalendarView = function (employee, state) {
 
         const legendTitle = document.createElement('div');
         legendTitle.className = 'calendar-task-legend-title';
-        legendTitle.textContent = 'Asignación de Tareas';
+        legendTitle.textContent = 'AsignaciÃ³n de Tareas';
 
         const legendItems = document.createElement('div');
         legendItems.className = 'calendar-task-items';
@@ -631,7 +639,7 @@ App.showCalendarView = function (employee, state) {
     const grid = document.createElement('div');
     grid.className = 'calendar-grid';
 
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'];
     dayNames.forEach(d => {
         const div = document.createElement('div');
         div.className = 'cal-day-name';
@@ -731,7 +739,7 @@ App.showEmployeeManager = function (currentOrg) {
     const header = document.createElement('div');
     header.className = 'employee-manager-header';
     header.innerHTML = `
-        <h3>Gestión de Colaboradores - ${currentOrg}</h3>
+        <h3>GestiÃ³n de Colaboradores - ${currentOrg}</h3>
         <button class="close-btn-x">&times;</button>
     `;
     header.querySelector('.close-btn-x').onclick = () => modal.remove();
@@ -748,7 +756,7 @@ App.showEmployeeManager = function (currentOrg) {
         <form class="employee-form" id="add-employee-form">
             <div class="form-group">
                 <label>Nombre Completo</label>
-                <input type="text" id="emp-name" required placeholder="Ej: Juan Pérez">
+                <input type="text" id="emp-name" required placeholder="Ej: Juan PÃ©rez">
             </div>
             <div class="form-group">
                 <label>Categoría</label>
@@ -758,6 +766,10 @@ App.showEmployeeManager = function (currentOrg) {
                     <option value="${App.CATEGORIES.ADMIN}">Administración</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label>PIN (4 dígitos - para acceso personal)</label>
+                <input type="text" id="emp-pin" maxlength="4" placeholder="Ej: 1234" value="0000" required>
+            </div>
             <button type="submit" class="btn-add-employee">+ Agregar</button>
         </form>
     `;
@@ -766,11 +778,15 @@ App.showEmployeeManager = function (currentOrg) {
         e.preventDefault();
         const name = addSection.querySelector('#emp-name').value.trim();
         const category = addSection.querySelector('#emp-category').value;
+        const pin = addSection.querySelector('#emp-pin').value.trim();
 
-        if (name) {
-            App.store.addEmployee(name, currentOrg, category);
+        if (name && pin.length === 4) {
+            App.store.addEmployee(name, currentOrg, category, pin);
             addSection.querySelector('#emp-name').value = '';
+            addSection.querySelector('#emp-pin').value = '0000';
             App.refreshEmployeeList(currentOrg, listSection);
+        } else {
+            alert('Por favor complete todos los campos. El PIN debe tener 4 dígitos.');
         }
     };
 
@@ -801,7 +817,7 @@ App.refreshEmployeeList = function (currentOrg, container) {
     list.className = 'employee-list';
 
     if (employees.length === 0) {
-        list.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay colaboradores registrados para esta organización.</p>';
+        list.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay colaboradores registrados para esta organizaciÃ³n.</p>';
     } else {
         // Group employees by category
         const categories = [App.CATEGORIES.PLAYA, App.CATEGORIES.FULL, App.CATEGORIES.ADMIN];
@@ -818,7 +834,7 @@ App.refreshEmployeeList = function (currentOrg, container) {
                 const categoryHeader = document.createElement('div');
                 categoryHeader.className = 'employee-category-header';
                 categoryHeader.innerHTML = `
-                    <span class="category-arrow">▼</span>
+                    <span class="category-arrow">â–¼</span>
                     <span class="category-name">${category}</span>
                     <span class="category-count">(${categoryEmployees.length})</span>
                 `;
@@ -844,7 +860,7 @@ App.refreshEmployeeList = function (currentOrg, container) {
 
                     item.querySelector('.btn-edit-employee').onclick = () => App.showEditEmployee(emp, currentOrg, container);
                     item.querySelector('.btn-delete-employee').onclick = () => {
-                        if (confirm(`¿Eliminar a ${emp.name}? Esto también eliminará todos sus turnos y tareas.`)) {
+                        if (confirm(`Â¿Eliminar a ${emp.name}? Esto tambiÃ©n eliminarÃ¡ todos sus turnos y tareas.`)) {
                             App.store.deleteEmployee(emp.id);
                             App.refreshEmployeeList(currentOrg, container);
                         }
@@ -858,7 +874,7 @@ App.refreshEmployeeList = function (currentOrg, container) {
                     const isExpanded = categoryHeader.dataset.expanded === 'true';
                     categoryHeader.dataset.expanded = isExpanded ? 'false' : 'true';
                     categoryContent.style.display = isExpanded ? 'none' : 'block';
-                    categoryHeader.querySelector('.category-arrow').textContent = isExpanded ? '▶' : '▼';
+                    categoryHeader.querySelector('.category-arrow').textContent = isExpanded ? 'â–¶' : 'â–¼';
                 };
 
                 categorySection.appendChild(categoryHeader);
@@ -892,11 +908,11 @@ App.showEditEmployee = function (employee, currentOrg, listContainer) {
                 <input type="text" id="edit-emp-name" required value="${employee.name}">
             </div>
             <div class="form-group">
-                <label>Categoría</label>
+                <label>CategorÃ­a</label>
                 <select id="edit-emp-category" required>
                     <option value="${App.CATEGORIES.PLAYA}" ${employee.category === App.CATEGORIES.PLAYA ? 'selected' : ''}>Playa</option>
                     <option value="${App.CATEGORIES.FULL}" ${employee.category === App.CATEGORIES.FULL ? 'selected' : ''}>Full</option>
-                    <option value="${App.CATEGORIES.ADMIN}" ${employee.category === App.CATEGORIES.ADMIN ? 'selected' : ''}>Administración</option>
+                    <option value="${App.CATEGORIES.ADMIN}" ${employee.category === App.CATEGORIES.ADMIN ? 'selected' : ''}>AdministraciÃ³n</option>
                 </select>
             </div>
             <button type="submit" class="btn-add-employee">Guardar Cambios</button>
@@ -926,26 +942,26 @@ App.showEditEmployee = function (employee, currentOrg, listContainer) {
 App.showDashboard = function (org, currentDate) {
     var monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
     var employees = App.store.getEmployeesByOrg(org);
-    
+
     var modal = document.createElement('div');
     modal.className = 'modal-backdrop';
-    
-    var rows = employees.map(function(emp) {
+
+    var rows = employees.map(function (emp) {
         var stats = App.store.getEmployeeStats(emp.id, monthKey);
         return '<tr><td><strong>' + emp.name + '</strong></td><td>' + stats.hours + ' hs</td><td>' + stats.sundays + '</td><td>' + stats.holidays + '</td></tr>';
     }).join('');
 
-    modal.innerHTML = '<div class=\'modal-content dashboard-modal\'><header class=\'modal-header\'><h2>Resumen de Estad�sticas - ' + App.formatMonthYear(currentDate) + '</h2><button class=\'btn-close\'>&times;</button></header><div class=\'dashboard-grid\'><table><thead><tr><th>Colaborador</th><th>hs. Totales</th><th>Dom. Trabajados</th><th>Fer. Trabajados</th></tr></thead><tbody>' + rows + '</tbody></table></div><div class=\'modal-footer\'><p class=\'stats-note\'>Basado en turnos cargados y d�as feriados nacionales configurados.</p><button class=\'btn-primary\'>Entendido</button></div></div>';
+    modal.innerHTML = '<div class=\'modal-content dashboard-modal\'><header class=\'modal-header\'><h2>Resumen de Estadísticas - ' + App.formatMonthYear(currentDate) + '</h2><button class=\'btn-close\'>&times;</button></header><div class=\'dashboard-grid\'><table><thead><tr><th>Colaborador</th><th>hs. Totales</th><th>Dom. Trabajados</th><th>Fer. Trabajados</th></tr></thead><tbody>' + rows + '</tbody></table></div><div class=\'modal-footer\'><p class=\'stats-note\'>Basado en turnos cargados y días feriados nacionales configurados.</p><button class=\'btn-primary\'>Entendido</button></div></div>';
 
-    modal.querySelector('.btn-close').onclick = function() { modal.remove(); };
-    modal.querySelector('.btn-primary').onclick = function() { modal.remove(); };
+    modal.querySelector('.btn-close').onclick = function () { modal.remove(); };
+    modal.querySelector('.btn-primary').onclick = function () { modal.remove(); };
     document.body.appendChild(modal);
 };
 
-App.renderEmployeeLogin = function(container) {
+App.renderEmployeeLogin = function (container) {
     var wrapper = document.createElement('div');
     wrapper.className = 'login-container';
-    wrapper.innerHTML = '<h2>Acceso Colaborador</h2><div class=\'form-group\'><select id=\'login-org-select\'><option value=\'\'>Selecciona tu Sucursal</option></select></div><div class=\'form-group\'><select id=\'login-emp-select\' disabled><option value=\'\'>Selecciona tu Nombre</option></select></div><div class=\'form-group\'><input type=\'password\' id=\'login-pin\' placeholder=\'PIN (4 d�gitos)\' maxlength=\'4\' disabled></div><button id=\'btn-login-enter\' disabled>Ingresar</button><button id=\'btn-login-back\'>Volver</button>';
+    wrapper.innerHTML = '<h2>Acceso Colaborador</h2><div class=\'form-group\'><select id=\'login-org-select\'><option value=\'\'>Selecciona tu Sucursal</option></select></div><div class=\'form-group\'><select id=\'login-emp-select\' disabled><option value=\'\'>Selecciona tu Nombre</option></select></div><div class=\'form-group\'><input type=\'password\' id=\'login-pin\' placeholder=\'PIN (4 dígitos)\' maxlength=\'4\' disabled></div><button id=\'btn-login-enter\' disabled>Ingresar</button><button id=\'btn-login-back\'>Volver</button>';
 
     var orgSelect = wrapper.querySelector('#login-org-select');
     var empSelect = wrapper.querySelector('#login-emp-select');
@@ -954,18 +970,18 @@ App.renderEmployeeLogin = function(container) {
     var backBtn = wrapper.querySelector('#btn-login-back');
 
     var orgs = App.store.state.organizations || [];
-    orgs.forEach(function(org) {
+    orgs.forEach(function (org) {
         var opt = document.createElement('option');
         opt.value = org;
         opt.textContent = org;
         orgSelect.appendChild(opt);
     });
 
-    orgSelect.onchange = function() {
+    orgSelect.onchange = function () {
         empSelect.innerHTML = '<option value=\'\'>Selecciona tu Nombre</option>';
         if (orgSelect.value) {
             var emps = App.store.getEmployeesByOrg(orgSelect.value);
-            emps.forEach(function(emp) {
+            emps.forEach(function (emp) {
                 var opt = document.createElement('option');
                 opt.value = emp.id;
                 opt.textContent = emp.name;
@@ -978,54 +994,54 @@ App.renderEmployeeLogin = function(container) {
         }
     };
 
-    empSelect.onchange = function() {
+    empSelect.onchange = function () {
         pinInput.disabled = !empSelect.value;
         if (empSelect.value) pinInput.focus();
     };
 
-    pinInput.oninput = function() {
+    pinInput.oninput = function () {
         loginBtn.disabled = pinInput.value.length < 4;
     };
 
-    loginBtn.onclick = function() {
+    loginBtn.onclick = function () {
         var empId = empSelect.value;
         var pin = pinInput.value;
         if (App.store.validateEmployeePin(empId, pin)) {
-            var emp = App.store.state.employees.find(function(e) { return e.id == empId; });
+            var emp = App.store.state.employees.find(function (e) { return e.id == empId; });
             App.showEmployeePortal(emp);
         } else {
             alert('PIN Incorrecto');
         }
     };
 
-    backBtn.onclick = function() { App.render(document.getElementById('app'), App.store.state); };
+    backBtn.onclick = function () { App.render(document.getElementById('app'), App.store.state); };
 
     container.innerHTML = '';
     container.appendChild(wrapper);
 };
 
-App.showEmployeePortal = function(employee) {
+App.showEmployeePortal = function (employee) {
     var container = document.getElementById('app');
     container.innerHTML = '';
 
     var portal = document.createElement('div');
     portal.className = 'employee-portal';
-    
+
     var header = document.createElement('header');
     header.className = 'portal-header';
     header.innerHTML = '<div class=\'user-info\'><h2>Hola, ' + employee.name + '</h2><span>' + employee.organization + '</span></div><button id=\'btn-portal-logout\'>Salir</button>';
-    header.querySelector('#btn-portal-logout').onclick = function() { window.location.reload(); };
-    
+    header.querySelector('#btn-portal-logout').onclick = function () { window.location.reload(); };
+
     portal.appendChild(header);
-    
+
     var wrapper = document.createElement('div');
     wrapper.style.padding = '20px';
-    wrapper.innerHTML = '<p>Tu calendario se abrir� a continuaci�n...</p>';
+    wrapper.innerHTML = '<p>Tu calendario se abrirá a continuación...</p>';
     portal.appendChild(wrapper);
-    
+
     container.appendChild(portal);
 
-    setTimeout(function() {
+    setTimeout(function () {
         App.showCalendarView(employee, App.store.state);
     }, 100);
 };
@@ -1054,13 +1070,13 @@ App.render = function (container, state) {
     }
 };
 
-App.showEmployeePortal = function(employee) {
+App.showEmployeePortal = function (employee) {
     App.store.state.isPortalMode = true;
     App.store.state.portalEmployee = employee;
     App.store.emitChange();
 };
 
-App.renderEmployeePortal = function(container, employee) {
+App.renderEmployeePortal = function (container, employee) {
     var wrapper = document.createElement('div');
     wrapper.className = 'employee-portal';
 
@@ -1068,18 +1084,18 @@ App.renderEmployeePortal = function(container, employee) {
     var header = document.createElement('header');
     header.className = 'portal-header';
     header.innerHTML = '<div class=\'user-info\'><h2>Hola, ' + employee.name + '</h2><span>' + employee.organization + '</span></div><div class=\'portal-controls\'><button id=\'btn-portal-share\' title=\'Compartir por WhatsApp\'>??</button><button id=\'btn-portal-logout\'>Salir</button></div>';
-    
-    header.querySelector('#btn-portal-share').onclick = function() {
+
+    header.querySelector('#btn-portal-share').onclick = function () {
         var url = App.generateWhatsAppLink(employee, App.store.state.currentDate, App.store.state.shifts);
         window.open(url, '_blank');
     };
-    
-    header.querySelector('#btn-portal-logout').onclick = function() { 
+
+    header.querySelector('#btn-portal-logout').onclick = function () {
         App.store.state.isPortalMode = false;
         App.store.state.portalEmployee = null;
-        window.location.reload(); 
+        window.location.reload();
     };
-    
+
     wrapper.appendChild(header);
 
     // Month Nav
@@ -1088,10 +1104,10 @@ App.renderEmployeePortal = function(container, employee) {
     nav.style.justifyContent = 'center';
     nav.style.margin = '20px 0';
     nav.innerHTML = '<button id=\'btn-prev-month\'>&lt;</button><span class=\'date-display\'>' + App.formatMonthYear(App.store.state.currentDate) + '</span><button id=\'btn-next-month\'>&gt;</button>';
-    
-    nav.querySelector('#btn-prev-month').onclick = function() { App.changeMonth(-1); };
-    nav.querySelector('#btn-next-month').onclick = function() { App.changeMonth(1); };
-    
+
+    nav.querySelector('#btn-prev-month').onclick = function () { App.changeMonth(-1); };
+    nav.querySelector('#btn-next-month').onclick = function () { App.changeMonth(1); };
+
     wrapper.appendChild(nav);
 
     // Calendar Request
@@ -1107,14 +1123,14 @@ App.renderEmployeePortal = function(container, employee) {
     // HACK: Use showCalendarView but hijack the modal creation?
     // No, better to duplicate the grid rendering logic or refactor.
     // Given the constraints, I will duplicate the grid rendering part of showCalendarView here for stability.
-    
+
     var grid = document.createElement('div');
     grid.className = 'calendar-grid';
     grid.style.maxWidth = '100%';
     grid.style.margin = '0 auto';
 
-    var dayNames = ['Dom', 'Lun', 'Mar', 'Mi�', 'Jue', 'Vie', 'S�b'];
-    dayNames.forEach(function(d) {
+    var dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    dayNames.forEach(function (d) {
         var div = document.createElement('div');
         div.className = 'cal-day-name';
         div.textContent = d;
@@ -1139,13 +1155,13 @@ App.renderEmployeePortal = function(container, employee) {
     for (var d = 1; d <= daysInMonth; d++) {
         var div = document.createElement('div');
         div.className = 'cal-day-cell';
-        
+
         var shiftCode = empShifts[d];
-        
+
         if (shiftCode) {
             var shiftInfo = null;
             var allTypes = (App.SHIFT_TYPES.PLAYA || []).concat(App.SHIFT_TYPES.FULL || []);
-            shiftInfo = allTypes.find(function(s) { return s.code === shiftCode; });
+            shiftInfo = allTypes.find(function (s) { return s.code === shiftCode; });
 
             var label = document.createElement('div');
             label.className = 'cal-shift-label';
@@ -1169,231 +1185,11 @@ App.renderEmployeePortal = function(container, employee) {
         }
         grid.appendChild(div);
     }
-    
+
     calContainer.appendChild(grid);
 };
 
 
-/* DARK MODE TOGGLE */
-App.initTheme = function() {
-    var savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    }
-    
-    // Check if button already exists
-    if (document.getElementById('theme-toggle')) return;
-
-    var btn = document.createElement('button');
-    btn.id = 'theme-toggle';
-    btn.textContent = savedTheme === 'dark' ? '??' : '??';
-    btn.title = 'Cambiar Tema';
-    btn.style.position = 'fixed';
-    btn.style.bottom = '20px';
-    btn.style.right = '20px';
-    btn.style.zIndex = '10000';
-    btn.style.width = '48px';
-    btn.style.height = '48px';
-    btn.style.borderRadius = '50%';
-    btn.style.border = 'none';
-    btn.style.background = 'var(--ypf-header-blue)';
-    btn.style.color = 'white';
-    btn.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
-    btn.style.cursor = 'pointer';
-    btn.style.fontSize = '1.5rem';
-    btn.style.display = 'flex';
-    btn.style.alignItems = 'center';
-    btn.style.justifyContent = 'center';
-    btn.style.transition = 'all 0.3s';
-    
-    btn.onmouseover = function() { btn.style.transform = 'scale(1.1)'; };
-    btn.onmouseout = function() { btn.style.transform = 'scale(1)'; };
-
-    btn.onclick = function() {
-        var current = document.documentElement.getAttribute('data-theme');
-        var next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
-        btn.textContent = next === 'dark' ? '??' : '??';
-    };
-    
-    document.body.appendChild(btn);
-};
-
-// Initialize
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', App.initTheme);
-} else {
-    App.initTheme();
-}
 
 
-App.renderScheduler = function (container, state) {
-    var days = App.getDaysInMonth(state.currentDate);
-    var filter = state.currentFilter || 'ALL';
-    var employees = App.store.getEmployeesByOrg(state.currentOrg);
-    if (filter !== 'ALL') {
-        employees = employees.filter(function(e) { return e.category === filter; });
-    }
 
-    var header = document.createElement('header');
-    header.className = 'app-header';
-    header.innerHTML = '<div class=\'header-main\'><div class=\'title-row\'><h1>Planilla de Horarios</h1><button id=\'btn-admin\' class=\'' + (state.isAdmin ? 'active' : '') + '\'>' + (state.isAdmin ? '?? Salir Admin' : '?? Admin') + '</button></div><div class=\'header-subrow\'><span class=\'org-badge clickable\' title=\'Cambiar Organizaci�n\'>' + state.currentOrg + '</span><div class=\'month-nav\'><button id=\'btn-prev-month\'>&lt;</button><span class=\'date-display\'>' + App.formatMonthYear(state.currentDate) + '</span><button id=\'btn-next-month\'>&gt;</button></div></div></div><div class=\'controls\'>' + (state.isAdmin ? '<button id=\'btn-employees\'>?? Colaboradores</button>' : '') + (state.isAdmin ? '<button id=\'btn-tasks\'>?? Asignar Tareas</button>' : '') + (state.isAdmin ? '<button id=\'btn-dashboard\'>?? Estad�sticas</button>' : '') + (state.isAdmin ? '<button id=\'btn-propagate\' title=\'Rellenar inicio del pr�ximo mes\'>?? Pr�ximo Mes</button>' : '') + (state.isAdmin ? '<button id=\'btn-export\'>?? Exportar</button>' : '') + '</div>';
-
-    header.querySelector('.org-badge').onclick = function() { App.store.setOrg(null); };
-    header.querySelector('#btn-admin').onclick = function() { App.toggleAdmin(state); };
-    if (header.querySelector('#btn-export')) header.querySelector('#btn-export').onclick = function() { App.exportToCSV(state.currentOrg, state.currentDate, employees, state.shifts, state.tasks); };
-    if (header.querySelector('#btn-dashboard')) header.querySelector('#btn-dashboard').onclick = function() { App.showDashboard(state.currentOrg, state.currentDate); };
-    if (header.querySelector('#btn-audit')) header.querySelector('#btn-audit').onclick = function() { App.showAuditLog(); };
-    if (header.querySelector('#btn-propagate')) header.querySelector('#btn-propagate').onclick = function() { if (confirm('�Propagar turnos al inicio del pr�ximo mes?')) App.store.propagateToNextMonth(); };
-    header.querySelector('#btn-prev-month').onclick = function() { App.changeMonth(-1); };
-    header.querySelector('#btn-next-month').onclick = function() { App.changeMonth(1); };
-    if (header.querySelector('#btn-employees')) header.querySelector('#btn-employees').onclick = function() { App.showEmployeeManager(state.currentOrg); };
-    if (header.querySelector('#btn-tasks')) header.querySelector('#btn-tasks').onclick = function() { if (confirm('�Generar asignaci�n de tareas autom�ticas?')) App.assignTasksForMonth(state.currentDate.getFullYear(), state.currentDate.getMonth()); };
-
-    var filterBar = document.createElement('div');
-    filterBar.className = 'filter-bar';
-    filterBar.innerHTML = '<button class=\'filter-btn ' + (filter === 'ALL' ? 'active' : '') + '\' data-filter=\'ALL\'>Todos</button><button class=\'filter-btn ' + (filter === App.CATEGORIES.ADMIN ? 'active' : '') + '\' data-filter=\'' + App.CATEGORIES.ADMIN + '\'>Administraci�n</button><button class=\'filter-btn ' + (filter === App.CATEGORIES.PLAYA ? 'active' : '') + '\' data-filter=\'' + App.CATEGORIES.PLAYA + '\'>Playa</button><button class=\'filter-btn ' + (filter === App.CATEGORIES.FULL ? 'active' : '') + '\' data-filter=\'' + App.CATEGORIES.FULL + '\'>Full</button>';
-    
-    var btns = filterBar.querySelectorAll('.filter-btn');
-    for (var i = 0; i < btns.length; i++) {
-        btns[i].onclick = function() { App.store.state.currentFilter = this.dataset.filter; App.store.emitChange(null, null, false); };
-    }
-
-    var legends = App.renderLegends(filter);
-    var gridContainer = document.createElement('div');
-    gridContainer.className = 'grid-container';
-    var table = document.createElement('table');
-    table.className = 'scheduler-table';
-    var thead = document.createElement('thead');
-    var headerRow = document.createElement('tr');
-    
-    var cornerTh = document.createElement('th');
-    cornerTh.className = 'sticky-col corner-header';
-    cornerTh.textContent = 'Colaborador';
-    headerRow.appendChild(cornerTh);
-
-    days.forEach(function(day) {
-        var th = document.createElement('th');
-        var dateKey = App.getMonthKey(state.currentDate) + '-' + String(day.date).padStart(2, '0');
-        var holidayName = App.HOLIDAYS && App.HOLIDAYS[dateKey];
-        th.className = 'day-header ' + (day.fullDate.getDay() === 0 ? 'sunday' : '') + (holidayName ? ' holiday' : '');
-        if (holidayName) th.title = holidayName;
-        th.innerHTML = '<div class=\'day-num\'>' + day.date + '</div><div class=\'day-name\'>' + day.dayName + '</div>';
-        headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    var tbody = document.createElement('tbody');
-    var categories = [App.CATEGORIES.PLAYA, App.CATEGORIES.FULL, App.CATEGORIES.ADMIN];
-    
-    categories.forEach(function(category) {
-        var catEmployees = employees.filter(function(e) { return e.category === category; });
-        if (catEmployees.length > 0) {
-            var catRow = document.createElement('tr');
-            catRow.className = 'category-header-row';
-            catRow.innerHTML = '<td class=\'category-header-cell sticky-col\' colspan=\'' + (days.length + 1) + '\'><span class=\'category-arrow\'>?</span><span class=\'category-name\'>' + category + '</span><span class=\'category-count\'>' + catEmployees.length + '</span></td>';
-            catRow.onclick = function() {
-                var expanded = this.dataset.expanded !== 'false';
-                this.dataset.expanded = expanded ? 'false' : 'true';
-                this.querySelector('.category-arrow').textContent = expanded ? '?' : '?';
-                catEmployees.forEach(function(e) {
-                    var r = tbody.querySelector('tr[data-employee-id=\'' + e.id + '\']');
-                    if (r) r.style.display = expanded ? 'none' : 'table-row';
-                });
-            };
-            tbody.appendChild(catRow);
-
-            catEmployees.forEach(function(emp) {
-                var tr = document.createElement('tr');
-                tr.className = 'employee-row';
-                tr.dataset.employeeId = emp.id;
-                var nameTd = document.createElement('td');
-                nameTd.className = 'sticky-col emp-name';
-                nameTd.textContent = emp.name;
-                nameTd.onclick = function() { App.showCalendarView(emp, state); };
-                tr.appendChild(nameTd);
-
-                var monthKey = App.getMonthKey(state.currentDate);
-                
-                days.forEach(function(day) {
-                    var td = document.createElement('td');
-                    td.className = 'shift-cell';
-                    var shiftCode = state.shifts[monthKey] && state.shifts[monthKey][emp.id] ? state.shifts[monthKey][emp.id][day.date] : null;
-
-                    if (shiftCode) {
-                        var shiftInfo = null;
-                        var allTypes = (App.SHIFT_TYPES.PLAYA || []).concat(App.SHIFT_TYPES.FULL || []);
-                        shiftInfo = allTypes.find(function(s) { return s.code === shiftCode; });
-                        
-                        if (shiftInfo) {
-                            td.style.backgroundColor = shiftInfo.color;
-                            td.textContent = shiftInfo.label;
-                            td.style.color = 'white';
-                        } else {
-                            td.textContent = shiftCode;
-                        }
-                    }
-
-                    td.onclick = function() { App.handleCellClick(emp, day, monthKey, state); };
-
-                    if (state.isAdmin && shiftCode) {
-                        td.draggable = true;
-                        td.ondragstart = function(e) {
-                            e.dataTransfer.setData('application/json', JSON.stringify({
-                                fromEmpId: emp.id,
-                                fromDay: day.date,
-                                shiftCode: shiftCode,
-                                monthKey: monthKey
-                            }));
-                            td.style.opacity = '0.5';
-                        };
-                        td.ondragend = function() { td.style.opacity = '1'; };
-                    }
-                    if (state.isAdmin) {
-                        td.ondragover = function(e) { e.preventDefault(); };
-                        td.ondrop = function(e) {
-                            e.preventDefault();
-                            var data = JSON.parse(e.dataTransfer.getData('application/json'));
-                            if (data && data.monthKey === monthKey) {
-                                App.store.moveShift(data.fromEmpId, data.fromDay, emp.id, day.date, monthKey);
-                            }
-                        };
-                    }
-
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
-    });
-
-    table.appendChild(tbody);
-    gridContainer.appendChild(table);
-    container.appendChild(header);
-    container.appendChild(filterBar);
-    if (legends) container.appendChild(legends);
-    container.appendChild(gridContainer);
-};
-
-
-App.showAuditLog = function() {
-    var logs = App.store.state.logs || [];
-    
-    var modal = document.createElement('div');
-    modal.className = 'modal-backdrop';
-    
-    var logRows = logs.map(function(log) {
-        var date = new Date(log.timestamp).toLocaleString();
-        return '<tr><td>' + date + '</td><td>' + log.action + '</td><td>' + log.details + '</td></tr>';
-    }).join('');
-
-    if (logs.length === 0) {
-        logRows = '<tr><td colspan=\'3\' style=\'text-align:center\'>No hay cambios recientes registrados.</td></tr>';
-    }
-
-    modal.innerHTML = '<div class=\'modal-content dashboard-modal\'><header class=\'modal-header\'><h2>Historial de Cambios</h2><button class=\'btn-close\'>&times;</button></header><div class=\'dashboard-grid\'><table><thead><tr><th>Fecha/Hora</th><th>Acci�n</th><th>Detalle</th></tr></thead><tbody>' + logRows + '</tbody></table></div></div>';
-
-    modal.querySelector('.btn-close').onclick = function() { modal.remove(); };    document.body.appendChild(modal);
-};

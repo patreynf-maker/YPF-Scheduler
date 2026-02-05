@@ -1,4 +1,4 @@
-// Initialize Global Namespace
+﻿// Initialize Global Namespace
 window.App = window.App || {};
 
 App.ADMIN_PASSWORD = "6rup00c74n0";
@@ -43,20 +43,20 @@ App.SHIFT_TYPES = {
 
 // Holidays data (YYYY-MM-DD keys)
 App.HOLIDAYS = {
-    '2024-01-01': 'Año Nuevo',
+    '2024-01-01': 'AÃ±o Nuevo',
     '2024-03-24': 'Memoria, Verdad y Justicia',
     '2024-04-02': 'Malvinas',
-    '2024-05-01': 'Día del Trabajador',
-    '2024-05-25': 'Revolución de Mayo',
-    '2024-06-20': 'Día de la Bandera',
-    '2024-07-09': 'Día de la Independencia',
-    '2024-12-08': 'Inmaculada Concepción',
+    '2024-05-01': 'DÃ­a del Trabajador',
+    '2024-05-25': 'RevoluciÃ³n de Mayo',
+    '2024-06-20': 'DÃ­a de la Bandera',
+    '2024-07-09': 'DÃ­a de la Independencia',
+    '2024-12-08': 'Inmaculada ConcepciÃ³n',
     '2024-12-25': 'Navidad'
 };
 
 App.TASKS_PLAYA = {
     1: 'Surtidores (Liq. y GNC) / Puntera isla',
-    2: 'Repasar islas / Bocas combustible / Mueble facturación',
+    2: 'Repasar islas / Bocas combustible / Mueble facturaciÃ³n',
     3: 'Columnas / Picos / Barrer playa',
     4: 'Encerar'
 };
@@ -67,3 +67,4 @@ App.TASK_COLORS = {
     3: 'var(--task-3)',
     4: 'var(--task-4)'
 };
+

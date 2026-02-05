@@ -1,4 +1,4 @@
-window.App = window.App || {};
+﻿window.App = window.App || {};
 
 App.getDaysInMonth = function (date) {
     const year = date.getFullYear();
@@ -31,7 +31,7 @@ App.generateWhatsAppLink = function (employee, date, shifts) {
     const empShifts = shifts[monthKey]?.[employee.id] || {};
     const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     
-    let text = `📅 *Cronograma ${App.formatMonthYear(date)} - ${employee.name}*\n\n`;
+    let text = `ðŸ“… *Cronograma ${App.formatMonthYear(date)} - ${employee.name}*\n\n`;
     
     for (let d = 1; d <= daysInMonth; d++) {
         const currentDate = new Date(date.getFullYear(), date.getMonth(), d);
@@ -49,6 +49,7 @@ App.generateWhatsAppLink = function (employee, date, shifts) {
         }
     }
     
-    text += `\n🔗 Generado por ShiftScheduler`;
+    text += `\nðŸ”— Generado por ShiftScheduler`;
     return `https://wa.me/?text=${encodeURIComponent(text)}`;
 };
+

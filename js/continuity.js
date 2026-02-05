@@ -1,4 +1,4 @@
-window.App = window.App || {};
+﻿window.App = window.App || {};
 
 /**
  * Checks if the specified month is complete for all employees in the current organization.
@@ -24,7 +24,7 @@ App.isMonthCompleteForOrg = function (employees, year, month, allShifts) {
         for (let d = 1; d <= daysInMonth; d++) {
             const val = empShifts[d];
             if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
-                errors.push(`${emp.name} (Día ${d})`);
+                errors.push(`${emp.name} (DÃ­a ${d})`);
                 if (errors.length > 5) break;
             }
         }
@@ -134,3 +134,4 @@ App.predictNextMonthShifts = function (empId, year, month, allShifts) {
 
     return nextShifts;
 };
+

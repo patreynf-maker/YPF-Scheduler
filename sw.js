@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scheduler-v2';
+const CACHE_NAME = 'scheduler-v5';
 const ASSETS = [
     './',
     './index.html',
@@ -18,6 +18,22 @@ self.addEventListener('install', (e) => {
     e.waitUntil(
         caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
     );
+    self.skipWaiting(); // Force immediate activation
+});
+
+self.addEventListener('activate', (e) => {
+    e.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((name) => {
+                    if (name !== CACHE_NAME) {
+                        return caches.delete(name);
+                    }
+                })
+            );
+        })
+    );
+    return self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {

@@ -1,4 +1,4 @@
-window.App = window.App || {};
+﻿window.App = window.App || {};
 
 App.assignTasksForMonth = function (year, month) {
     const state = App.store.state;
@@ -24,7 +24,7 @@ App.assignTasksForMonth = function (year, month) {
     }
 
     if (incompleteDays.length > 0) {
-        alert(`No se pueden asignar tareas. Faltan asignar turnos en los días: ${incompleteDays.join(', ')}. Todos los colaboradores deben tener un turno asignado.`);
+        alert(`No se pueden asignar tareas. Faltan asignar turnos en los dÃ­as: ${incompleteDays.join(', ')}. Todos los colaboradores deben tener un turno asignado.`);
         return;
     }
 
@@ -57,14 +57,14 @@ App.assignDailyTasks = function (day, monthKey, employees, monthlyShifts) {
 
     let dailyAssignments = {};
 
-    // Rule 1: Cada día debe tener solo un nro 4, en el horario de "22 a 06"
+    // Rule 1: Cada dÃ­a debe tener solo un nro 4, en el horario de "22 a 06"
     const pool2206 = candidates.filter(c => c.shift === '22-06' && !dailyAssignments[c.id]);
     if (pool2206.length > 0) {
         const chosen = App.pickRandom(pool2206);
         dailyAssignments[chosen.id] = 4;
     }
 
-    // Rule 2: Cada día debe tener dos números 3, en "16 a 00" y "08 a 16"
+    // Rule 2: Cada dÃ­a debe tener dos nÃºmeros 3, en "16 a 00" y "08 a 16"
     const pool1600 = candidates.filter(c => c.shift === '16-00' && !dailyAssignments[c.id]);
     if (pool1600.length > 0) {
         const chosen = App.pickRandom(pool1600);
@@ -77,7 +77,7 @@ App.assignDailyTasks = function (day, monthKey, employees, monthlyShifts) {
         dailyAssignments[chosen.id] = 3;
     }
 
-    // Rule 3 & 4: Al menos un nro 1 y al menos un nro 2 al día
+    // Rule 3 & 4: Al menos un nro 1 y al menos un nro 2 al dÃ­a
     // Get remaining unassigned employees
     const remaining = candidates.filter(c => !dailyAssignments[c.id]);
 
@@ -207,3 +207,4 @@ App.isWorkingShift = function (code) {
 App.pickRandom = function (array) {
     return array[Math.floor(Math.random() * array.length)];
 };
+

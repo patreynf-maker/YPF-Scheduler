@@ -1,4 +1,4 @@
-window.App = window.App || {};
+﻿window.App = window.App || {};
 
 App.exportToCSV = function (orgName, date, employees, shifts, tasks) {
     const days = App.getDaysInMonth(date);
@@ -78,7 +78,7 @@ App.importFromCSV = function (file, orgName, currentDate) {
         });
 
         if (daysIndices.length === 0) {
-            alert("No se detectaron columnas de días en el encabezado del archivo. Asegúrate de usar el formato exportado por el sistema.");
+            alert("No se detectaron columnas de dÃ­as en el encabezado del archivo. AsegÃºrate de usar el formato exportado por el sistema.");
             return;
         }
 
@@ -130,10 +130,11 @@ App.importFromCSV = function (file, orgName, currentDate) {
 
         if (updatedCount > 0) {
             App.store.emitChange();
-            alert(`Importación completada con éxito.\nSe actualizaron: ${updatedCount} colaboradores.`);
+            alert(`ImportaciÃ³n completada con Ã©xito.\nSe actualizaron: ${updatedCount} colaboradores.`);
         } else {
-            alert("No se encontraron coincidencias. Asegúrate de:\n1. Que los nombres coincidan exactamente.\n2. Estar en la misma Organización que el archivo.\n3. Que el archivo no esté abierto en Excel al importar.");
+            alert("No se encontraron coincidencias. AsegÃºrate de:\n1. Que los nombres coincidan exactamente.\n2. Estar en la misma OrganizaciÃ³n que el archivo.\n3. Que el archivo no estÃ© abierto en Excel al importar.");
         }
     };
     reader.readAsText(file);
 }
+

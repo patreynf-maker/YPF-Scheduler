@@ -1,5 +1,5 @@
-// Firebase Configuration (TUS CLAVES VAN AQUÍ)
-// Debes crear un proyecto en console.firebase.google.com y pegar tu config aquí:
+﻿// Firebase Configuration (TUS CLAVES VAN AQUÃ)
+// Debes crear un proyecto en console.firebase.google.com y pegar tu config aquÃ­:
 const firebaseConfig = {
     apiKey: "AIzaSyBGGNkdypMPAfLNhxkDj9NQiNPU7v88JVY",
     authDomain: "ypf-scheduler.firebaseapp.com",
@@ -30,3 +30,4 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.loading').textContent = 'Error: Fallo al cargar modulos. Verifique los archivos.';
     }
 });
+
