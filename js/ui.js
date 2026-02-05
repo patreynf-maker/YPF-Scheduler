@@ -955,6 +955,9 @@ App.showDashboard = function (org, currentDate) {
 
     modal.querySelector('.btn-close').onclick = function () { modal.remove(); };
     modal.querySelector('.btn-primary').onclick = function () { modal.remove(); };
+    if (modal.querySelector('.btn-export-stats')) {
+        modal.querySelector('.btn-export-stats').onclick = function() { App.exportDashboardToCSV(org, currentDate); };
+    }
     document.body.appendChild(modal);
 };
 
@@ -1193,3 +1196,26 @@ App.renderEmployeePortal = function (container, employee) {
 
 
 
+
+
+App.exportDashboardToCSV = function(org, currentDate) {
+    var monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
+    var employees = App.store.getEmployeesByOrg(org);
+    
+    var csvContent = 'Colaborador,Horas Totales,Domingos Trabajados,Feriados Trabajados\n';
+    
+    employees.forEach(function(emp) {
+        var stats = App.store.getEmployeeStats(emp.id, monthKey);
+        csvContent += emp.name + ',' + stats.hours + ',' + stats.sundays + ',' + stats.holidays + '\n';
+    });
+    
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    var url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'estadisticas_' + org + '_' + monthKey + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
