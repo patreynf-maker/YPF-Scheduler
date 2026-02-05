@@ -1,4 +1,4 @@
-﻿// Firebase Configuration (TUS CLAVES VAN AQUÃ)
+// Firebase Configuration (TUS CLAVES VAN AQUÃ)
 // Debes crear un proyecto en console.firebase.google.com y pegar tu config aquÃ­:
 const firebaseConfig = {
     apiKey: "AIzaSyBGGNkdypMPAfLNhxkDj9NQiNPU7v88JVY",

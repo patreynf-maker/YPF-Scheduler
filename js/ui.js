@@ -1,4 +1,4 @@
-﻿window.App = window.App || {};
+window.App = window.App || {};
 
 App.renderApp = function () {
     const app = document.getElementById('app');
@@ -67,7 +67,7 @@ App.renderOrgSelector = function (container) {
 
         const handleAdd = () => {
             const name = input.value.trim().toUpperCase();
-            if (name) {
+            if (name && pin.length === 4) {
                 App.store.addOrganization(name);
                 input.value = '';
             }
@@ -767,10 +767,9 @@ App.showEmployeeManager = function (currentOrg) {
                 </select>
             </div>
             <div class="form-group">
-                <label>PIN (4 dígitos - para acceso personal)</label>
-                <input type="text" id="emp-pin" maxlength="4" placeholder="Ej: 1234" value="0000" required>
-            </div>
-            <button type="submit" class="btn-add-employee">+ Agregar</button>
+                <label>PIN (4 dígitos)</label>
+                <input type="text" id="edit-emp-pin" maxlength="4" required value="${employee.pin || '0000'}">
+            </div><button type="submit" class="btn-add-employee">+ Agregar</button>
         </form>
     `;
 
@@ -924,9 +923,10 @@ App.showEditEmployee = function (employee, currentOrg, listContainer) {
         e.preventDefault();
         const name = content.querySelector('#edit-emp-name').value.trim();
         const category = content.querySelector('#edit-emp-category').value;
+        const pin = content.querySelector('#edit-emp-pin').value.trim();
 
-        if (name) {
-            App.store.updateEmployee(employee.id, { name, category });
+        if (name && pin.length === 4) {
+            App.store.updateEmployee(employee.id, { name, category, pin });
             App.refreshEmployeeList(currentOrg, listContainer);
             modal.remove();
         }

@@ -1,4 +1,4 @@
-﻿// Initialize Global Namespace
+// Initialize Global Namespace
 window.App = window.App || {};
 
 App.ADMIN_PASSWORD = "6rup00c74n0";

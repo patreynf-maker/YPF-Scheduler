@@ -1,4 +1,4 @@
-﻿window.App = window.App || {};
+window.App = window.App || {};
 
 App.getDaysInMonth = function (date) {
     const year = date.getFullYear();

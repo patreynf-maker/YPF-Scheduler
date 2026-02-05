@@ -1,4 +1,4 @@
-﻿window.App = window.App || {};
+window.App = window.App || {};
 
 App.exportToCSV = function (orgName, date, employees, shifts, tasks) {
     const days = App.getDaysInMonth(date);

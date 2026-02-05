@@ -1,4 +1,4 @@
-﻿window.App = window.App || {};
+window.App = window.App || {};
 
 /**
  * Checks if the specified month is complete for all employees in the current organization.

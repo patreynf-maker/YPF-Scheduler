@@ -1,4 +1,4 @@
-﻿window.App = window.App || {};
+window.App = window.App || {};
 
 App.store = {
     state: {
@@ -486,6 +486,14 @@ App.initStore = function () {
 
                 const maxId = App.store.state.employees.reduce((max, e) => Math.max(max, e.id), 499);
                 App.store.state.nextEmployeeId = Math.max(data.nextEmployeeId || 500, maxId + 1);
+                
+                // PIN Migration: Assign default PIN to employees without one
+                App.store.state.employees.forEach(emp => {
+                    if (!emp.pin) {
+                        emp.pin = '0000';
+                    }
+                });
+                
                 App.store.state.isLoaded = true;
                 App.store.listeners.forEach(l => l(App.store.state));
             } else {
@@ -510,17 +518,17 @@ App.initStore = function () {
 
 App.seedStore = function () {
     const dummyEmployees = [
-        { id: 1, name: 'Del Rio Federico', organization: 'QQN', category: App.CATEGORIES.PLAYA },
-        { id: 2, name: 'Escobar Maximiliano', organization: 'QQN', category: App.CATEGORIES.PLAYA },
-        { id: 3, name: 'Hanson Luciano', organization: 'QQN', category: App.CATEGORIES.PLAYA },
-        { id: 4, name: 'Hernandez Aron', organization: 'QQN', category: App.CATEGORIES.PLAYA },
-        { id: 5, name: 'Laborte Miguel', organization: 'QQN', category: App.CATEGORIES.PLAYA },
-        { id: 6, name: 'Parada David', organization: 'QQN', category: App.CATEGORIES.PLAYA },
-        { id: 7, name: 'Rodriguez Benjamin', organization: 'QQN', category: App.CATEGORIES.PLAYA },
-        { id: 8, name: 'Romano Cerola', organization: 'QQN', category: App.CATEGORIES.PLAYA },
-        { id: 9, name: 'Maria Garcia', organization: 'CR88', category: App.CATEGORIES.FULL },
-        { id: 10, name: 'Carlos Lopez', organization: 'CR88', category: App.CATEGORIES.PLAYA },
-        { id: 11, name: 'Ana Martinez', organization: 'VR', category: App.CATEGORIES.ADMIN }
+        { id: 1, name: 'Del Rio Federico', organization: 'QQN', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 2, name: 'Escobar Maximiliano', organization: 'QQN', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 3, name: 'Hanson Luciano', organization: 'QQN', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 4, name: 'Hernandez Aron', organization: 'QQN', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 5, name: 'Laborte Miguel', organization: 'QQN', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 6, name: 'Parada David', organization: 'QQN', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 7, name: 'Rodriguez Benjamin', organization: 'QQN', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 8, name: 'Romano Cerola', organization: 'QQN', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 9, name: 'Maria Garcia', organization: 'CR88', category: App.CATEGORIES.FULL, pin: '0000' },
+        { id: 10, name: 'Carlos Lopez', organization: 'CR88', category: App.CATEGORIES.PLAYA, pin: '0000' },
+        { id: 11, name: 'Ana Martinez', organization: 'VR', category: App.CATEGORIES.ADMIN, pin: '0000' }
     ];
     App.store.state.employees = dummyEmployees;
     App.store.state.organizations = [...App.ORGANIZATIONS];

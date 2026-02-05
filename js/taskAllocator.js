@@ -1,4 +1,4 @@
-﻿window.App = window.App || {};
+window.App = window.App || {};
 
 App.assignTasksForMonth = function (year, month) {
     const state = App.store.state;
