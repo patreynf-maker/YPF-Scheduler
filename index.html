@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Scheduler</title>
+    <link rel="stylesheet" href="css/theme.css?v=20260205.1540">
+    <link rel="stylesheet" href="css/style.css?v=20260205.1540">
+    <link rel="stylesheet" href="css/employee-manager.css?v=20260205.1540">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#003D82">
+</head>
+
+<body>
+    <div id="app">
+        <div class="loading">Cargando sistema...</div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Service Worker disabled for GitHub Pages compatibility -->
+    <!--
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch(err => console.log('SW Registration Failed', err));
+        }
+    </script>
+    -->
+    <!-- Firebase SDK (Compat version for easier integration) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- Scripts loaded in dependency order -->
+    <script src="js/constants.js?v=20260205.1540"></script>
+    <script src="js/utils.js?v=20260205.1540"></script>
+    <script src="js/store.js?v=20260205.1540"></script>
+    <script src="js/export.js?v=20260205.1540"></script>
+    <script src="js/taskAllocator.js?v=20260205.1540"></script>
+    <script src="js/continuity.js?v=20260205.1540"></script>
+    <script src="js/ui.js?v=20260205.1540"></script>
+    <script src="js/app.js?v=20260205.1540"></script>
+</body>
+
+</html>
