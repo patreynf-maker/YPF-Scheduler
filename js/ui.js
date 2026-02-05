@@ -46,7 +46,7 @@ App.renderOrgSelector = function (container) {
 
     const adminBtn = document.createElement('button');
     adminBtn.className = `btn-admin-login ${state.isAdmin ? 'active' : ''}`;
-    adminBtn.innerHTML = state.isAdmin ? '\u00F0\u0178\u201D\u201C Admin Activo' : '\u00F0\u0178\u201D\u2019 Acceso Admin';
+    adminBtn.innerHTML = state.isAdmin ? '\u{1F513} Admin Activo' : '\u{1F512} Acceso Admin';
     adminBtn.onclick = () => App.toggleAdmin(state);
 
     headerRow.appendChild(adminBtn);
@@ -100,7 +100,7 @@ App.renderOrgSelector = function (container) {
         if (state.isAdmin) {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'org-delete-btn';
-            deleteBtn.innerHTML = '\u00C3\u2014';
+            deleteBtn.innerHTML = '\u{00D7}';
             deleteBtn.title = `Eliminar ${org}`;
             deleteBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -155,11 +155,11 @@ App.renderScheduler = function (container, state) {
             </div>
         </div>
         <div class="controls">
-            ${state.isAdmin ? '<button id="btn-employees">&#x1F465; Colaboradores</button>' : ''}
-            ${state.isAdmin ? '<button id="btn-tasks">&#x1F3AF; Asignar Tareas</button>' : ''}
-            ${state.isAdmin ? '<button id="btn-dashboard">& #x1F4CA; Estad\u00EDsticas</button>' : ''}
-            ${state.isAdmin ? '<button id="btn-propagate" title="Rellenar inicio del pr\u00F3ximo mes">&#x26A1; Pr\u00F3ximo Mes</button>' : ''}
-            ${state.isAdmin ? '<button id="btn-export">&#x1F4E5; Exportar</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-employees">\u{1F465} Colaboradores</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-tasks">\u{1F3AF} Asignar Tareas</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-dashboard">\u{1F4CA} Estad\u00EDsticas</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-propagate" title="Rellenar inicio del pr\u00F3ximo mes">\u26A1 Pr\u00F3ximo Mes</button>' : ''}
+            ${state.isAdmin ? '<button id="btn-export">\u{1F4E5} Exportar</button>' : ''}
         </div>
     `;
 
