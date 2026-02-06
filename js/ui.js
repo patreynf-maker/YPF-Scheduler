@@ -1,4 +1,4 @@
-window.App = window.App || {};
+﻿window.App = window.App || {};
 
 App.renderApp = function () {
     const app = document.getElementById('app');
@@ -69,7 +69,7 @@ App.renderOrgSelector = function (container) {
 
         const handleAdd = () => {
             const name = input.value.trim().toUpperCase();
-            if (name && pin.length === 4) {
+            if (name) {
                 App.store.addOrganization(name);
                 input.value = '';
             }
@@ -170,8 +170,6 @@ App.renderScheduler = function (container, state) {
     if (header.querySelector('#btn-export')) {
         header.querySelector('#btn-export').onclick = () => App.exportToCSV(state.currentOrg, state.currentDate, employees, state.shifts, state.tasks);
     }
-
-    if (header.querySelector('#btn-dashboard')) { header.querySelector('#btn-dashboard').onclick = () => App.showDashboard(state.currentOrg, state.currentDate); }
 
     if (header.querySelector('#btn-dashboard')) { header.querySelector('#btn-dashboard').onclick = () => App.showDashboard(state.currentOrg, state.currentDate); }
 
@@ -585,7 +583,7 @@ App.renderCalendarBody = function (employee, state) {
 
         const legendTitle = document.createElement('div');
         legendTitle.className = 'calendar-task-legend-title';
-        legendTitle.textContent = 'Asignación de Tareas';
+        legendTitle.textContent = 'AsignaciÃ³n de Tareas';
         legendTitle.style.fontWeight = 'bold';
         legendTitle.style.marginBottom = '5px';
         legendTitle.style.fontSize = '0.9rem';
@@ -623,7 +621,7 @@ App.renderCalendarBody = function (employee, state) {
     grid.style.gap = '2px';
     grid.style.padding = '10px';
 
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'];
     dayNames.forEach(d => {
         const div = document.createElement('div');
         div.className = 'cal-day-name';
@@ -745,7 +743,6 @@ App.renderCalendarBody = function (employee, state) {
     container.appendChild(grid);
     return container;
 };
-
 /* REFACTORED SHOW CALENDAR VIEW */
 App.showCalendarView = function (employee, state) {
     let modal = document.getElementById('calendar-modal');
@@ -1021,9 +1018,6 @@ App.showEditEmployee = function (employee, currentOrg, listContainer) {
     document.body.appendChild(modal);
 };
 
-
-
-
 App.showDashboard = function (org, currentDate) {
     var monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
     var employees = App.store.getEmployeesByOrg(org);
@@ -1043,26 +1037,156 @@ App.showDashboard = function (org, currentDate) {
     if (modal.querySelector('.btn-export-stats')) {
         modal.querySelector('.btn-export-stats').onclick = function () { App.exportDashboardToCSV(org, currentDate); };
     }
+    document.body.appendChild(modal);
+};
 
+App.renderEmployeeLogin = function (container) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'login-container';
+    wrapper.innerHTML = '<h2>Acceso Colaborador</h2><div class=\'form-group\'><select id=\'login-org-select\'><option value=\'\'>Selecciona tu Sucursal</option></select></div><div class=\'form-group\'><select id=\'login-emp-select\' disabled><option value=\'\'>Selecciona tu Nombre</option></select></div><div class=\'form-group\'><input type=\'password\' id=\'login-pin\' placeholder=\'PIN (4 d\u00EDgitos)\' maxlength=\'4\' disabled></div><button id=\'btn-login-enter\' disabled>Ingresar</button><button id=\'btn-login-back\'>Volver</button>';
 
-    App.exportDashboardToCSV = function (org, currentDate) {
-        var monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
-        var employees = App.store.getEmployeesByOrg(org);
+    var orgSelect = wrapper.querySelector('#login-org-select');
+    var empSelect = wrapper.querySelector('#login-emp-select');
+    var pinInput = wrapper.querySelector('#login-pin');
+    var loginBtn = wrapper.querySelector('#btn-login-enter');
+    var backBtn = wrapper.querySelector('#btn-login-back');
 
-        var csvContent = 'Colaborador,Horas Totales,Domingos Trabajados,Feriados Trabajados\n';
+    var orgs = App.store.state.organizations || [];
+    orgs.forEach(function (org) {
+        var opt = document.createElement('option');
+        opt.value = org;
+        opt.textContent = org;
+        orgSelect.appendChild(opt);
+    });
 
-        employees.forEach(function (emp) {
-            var stats = App.store.getEmployeeStats(emp.id, monthKey);
-            csvContent += emp.name + ',' + stats.hours + ',' + stats.sundays + ',' + stats.holidays + '\n';
-        });
-
-        var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        var link = document.createElement('a');
-        var url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'estadisticas_' + org + '_' + monthKey + '.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    orgSelect.onchange = function () {
+        empSelect.innerHTML = '<option value=\'\'>Selecciona tu Nombre</option>';
+        if (orgSelect.value) {
+            var emps = App.store.getEmployeesByOrg(orgSelect.value);
+            emps.forEach(function (emp) {
+                var opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = emp.name;
+                empSelect.appendChild(opt);
+            });
+            empSelect.disabled = false;
+        } else {
+            empSelect.disabled = true;
+            pinInput.disabled = true;
+        }
     };
+
+    empSelect.onchange = function () {
+        pinInput.disabled = !empSelect.value;
+        if (empSelect.value) pinInput.focus();
+    };
+
+    pinInput.oninput = function () {
+        loginBtn.disabled = pinInput.value.length < 4;
+    };
+
+    loginBtn.onclick = function () {
+        var empId = empSelect.value;
+        var pin = pinInput.value;
+        if (App.store.validateEmployeePin(empId, pin)) {
+            var emp = App.store.state.employees.find(function (e) { return e.id == empId; });
+            App.store.state.isPortalMode = true;
+            App.store.state.portalEmployee = emp;
+            App.store.emitChange();
+        } else {
+            alert('PIN Incorrecto');
+        }
+    };
+
+    backBtn.onclick = function () {
+        App.store.state.isPortalMode = false;
+        App.store.state.portalEmployee = null;
+        App.store.emitChange();
+    };
+
+    container.innerHTML = '';
+    container.appendChild(wrapper);
+};
+
+/* REFACTORED PORTAL RENDERER */
+App.renderEmployeePortal = function (container, employee) {
+    container.innerHTML = ''; // Clear container
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'employee-portal';
+    wrapper.style.padding = '10px';
+    wrapper.style.maxWidth = '800px';
+    wrapper.style.margin = '0 auto';
+
+    // Header
+    var header = document.createElement('header');
+    header.className = 'portal-header';
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.marginBottom = '20px';
+    header.innerHTML = '<div class=\'user-info\'><h2>Hola, ' + employee.name + '</h2><span style="color:#666;">' + employee.organization + '</span></div><div class=\'portal-controls\'><button id=\'btn-portal-share\' title=\'Compartir por WhatsApp\' style="margin-right:10px; padding: 5px 10px; cursor:pointer;">\uD83D\uDCE8</button><button id=\'btn-portal-logout\' style="padding: 5px 10px; cursor:pointer;">Salir</button></div>';
+
+    header.querySelector('#btn-portal-share').onclick = function () {
+        var url = App.generateWhatsAppLink(employee, App.store.state.currentDate, App.store.state.shifts);
+        window.open(url, '_blank');
+    };
+
+    header.querySelector('#btn-portal-logout').onclick = function () {
+        App.store.state.isPortalMode = false;
+        App.store.state.portalEmployee = null;
+        window.location.reload();
+    };
+
+    wrapper.appendChild(header);
+
+    // Month Nav
+    var nav = document.createElement('div');
+    nav.className = 'month-nav portal-nav';
+    nav.style.display = 'flex';
+    nav.style.justifyContent = 'center';
+    nav.style.alignItems = 'center';
+    nav.style.margin = '20px 0';
+    nav.innerHTML = '<button id=\'btn-prev-month\' style="padding:5px 15px; cursor:pointer;">&lt;</button><span class=\'date-display\' style="margin:0 15px; font-weight:bold; font-size:1.1rem;">' + App.formatMonthYear(App.store.state.currentDate) + '</span><button id=\'btn-next-month\' style="padding:5px 15px; cursor:pointer;">&gt;</button>';
+
+    nav.querySelector('#btn-prev-month').onclick = function () { App.changeMonth(-1); };
+    nav.querySelector('#btn-next-month').onclick = function () { App.changeMonth(1); };
+
+    wrapper.appendChild(nav);
+
+    // Calendar Request via Shared Logic
+    var calContainer = document.createElement('div');
+    calContainer.className = 'portal-calendar-wrapper';
+    calContainer.style.backgroundColor = 'white';
+    calContainer.style.padding = '15px';
+    calContainer.style.borderRadius = '8px';
+    calContainer.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+
+    // Append the shared body
+    calContainer.appendChild(App.renderCalendarBody(employee, App.store.state));
+
+    wrapper.appendChild(calContainer);
+    container.appendChild(wrapper);
+};
+
+App.exportDashboardToCSV = function (org, currentDate) {
+    var monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
+    var employees = App.store.getEmployeesByOrg(org);
+
+    var csvContent = 'Colaborador,Horas Totales,Domingos Trabajados,Feriados Trabajados\n';
+
+    employees.forEach(function (emp) {
+        var stats = App.store.getEmployeeStats(emp.id, monthKey);
+        csvContent += emp.name + ',' + stats.hours + ',' + stats.sundays + ',' + stats.holidays + '\n';
+    });
+
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    var url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'estadisticas_' + org + '_' + monthKey + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
