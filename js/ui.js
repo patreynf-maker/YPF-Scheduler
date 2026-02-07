@@ -577,33 +577,37 @@ App.renderCalendarBody = function (employee, state) {
     if (employee.category === App.CATEGORIES.PLAYA) {
         const taskLegendDiv = document.createElement('div');
         taskLegendDiv.className = 'calendar-task-legend';
-        taskLegendDiv.style.padding = '10px';
+        taskLegendDiv.style.padding = '15px';
         taskLegendDiv.style.backgroundColor = '#f8f9fa';
-        taskLegendDiv.style.borderBottom = '1px solid #eee';
+        taskLegendDiv.style.borderBottom = '1px solid #e9ecef';
+        taskLegendDiv.style.marginBottom = '15px';
+        taskLegendDiv.style.borderRadius = '8px';
 
         const legendTitle = document.createElement('div');
         legendTitle.className = 'calendar-task-legend-title';
-        legendTitle.textContent = 'AsignaciÃ³n de Tareas';
+        legendTitle.textContent = 'Referencias de Tareas';
         legendTitle.style.fontWeight = 'bold';
-        legendTitle.style.marginBottom = '5px';
-        legendTitle.style.fontSize = '0.9rem';
+        legendTitle.style.marginBottom = '10px';
+        legendTitle.style.color = '#495057';
+        legendTitle.style.fontSize = '0.95rem';
 
         const legendItems = document.createElement('div');
         legendItems.className = 'calendar-task-items';
-        legendItems.style.display = 'flex';
-        legendItems.style.flexWrap = 'wrap';
-        legendItems.style.gap = '10px';
+        legendItems.style.display = 'grid';
+        legendItems.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+        legendItems.style.gap = '8px';
 
         Object.keys(App.TASKS_PLAYA).forEach(num => {
             const item = document.createElement('div');
             item.className = 'calendar-task-item';
             item.style.display = 'flex';
             item.style.alignItems = 'center';
-            item.style.fontSize = '0.8rem';
+            item.style.fontSize = '0.85rem';
+            item.style.color = '#495057';
 
             item.innerHTML = `
-                <div class="task-badge-main" style="background-color: ${App.TASK_COLORS[num]}; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 5px;">${num}</div>
-                ${App.TASKS_PLAYA[num]}
+                <div class="task-badge-main" style="background-color: ${App.TASK_COLORS[num]}; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 8px; font-size: 0.75rem; flex-shrink: 0;">${num}</div>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${App.TASKS_PLAYA[num]}</span>
             `;
             legendItems.appendChild(item);
         });
@@ -618,19 +622,21 @@ App.renderCalendarBody = function (employee, state) {
     grid.className = 'calendar-grid';
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-    grid.style.gap = '2px';
+    grid.style.gap = '8px';
     grid.style.padding = '10px';
+    grid.style.backgroundColor = '#fff';
 
-    const dayNames = ['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'];
+    const dayNames = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
     dayNames.forEach(d => {
         const div = document.createElement('div');
         div.className = 'cal-day-name';
         div.textContent = d;
         div.style.textAlign = 'center';
         div.style.fontWeight = 'bold';
-        div.style.padding = '5px 0';
-        div.style.color = '#666';
-        div.style.fontSize = '0.9rem';
+        div.style.padding = '10px 0';
+        div.style.color = '#adb5bd';
+        div.style.fontSize = '0.8rem';
+        div.style.letterSpacing = '1px';
         grid.appendChild(div);
     });
 
@@ -653,9 +659,13 @@ App.renderCalendarBody = function (employee, state) {
     for (let d = 1; d <= daysInMonth; d++) {
         const div = document.createElement('div');
         div.className = 'cal-day-cell';
-        div.style.border = '1px solid #eee';
-        div.style.minHeight = '60px';
+        div.style.borderRadius = '8px';
+        div.style.minHeight = '100px';
         div.style.position = 'relative';
+        div.style.overflow = 'hidden';
+        div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+        div.style.display = 'flex';
+        div.style.flexDirection = 'column';
 
         const shiftCode = empShifts[d];
         const taskNum = empTasks[d];
@@ -672,35 +682,48 @@ App.renderCalendarBody = function (employee, state) {
 
             const label = document.createElement('div');
             label.className = 'cal-shift-label';
-            label.style.height = '100%';
+            label.style.flex = '1';
             label.style.width = '100%';
-            label.style.padding = '2px';
+            label.style.padding = '8px';
             label.style.boxSizing = 'border-box';
+            label.style.display = 'flex';
+            label.style.flexDirection = 'column';
+            label.style.justifyContent = 'center';
+            label.style.alignItems = 'center';
 
             if (shiftInfo) {
                 label.style.backgroundColor = shiftInfo.color;
-                label.textContent = shiftInfo.label;
                 label.style.color = '#fff';
-                label.style.fontSize = '0.8rem';
-                label.style.display = 'flex';
-                label.style.alignItems = 'flex-start';
-                label.style.justifyContent = 'flex-start';
             } else {
+                label.style.backgroundColor = '#f1f3f5';
+                label.style.color = '#495057';
                 label.textContent = shiftCode;
             }
 
-            // Date inside label
+            // Shift Label Text (Center)
+            if (shiftInfo) {
+                const shiftText = document.createElement('span');
+                shiftText.textContent = shiftInfo.label;
+                shiftText.style.fontWeight = 'bold';
+                shiftText.style.fontSize = '1.1rem';
+                shiftText.style.textShadow = '0 1px 2px rgba(0,0,0,0.2)';
+                shiftText.style.textAlign = 'center';
+                label.appendChild(shiftText);
+            }
+
+            // Date Number (Top Left)
             const dateDiv = document.createElement('div');
-            dateDiv.className = 'cal-date inside-shift';
             dateDiv.textContent = d;
             dateDiv.style.position = 'absolute';
-            dateDiv.style.bottom = '2px';
-            dateDiv.style.right = '4px';
-            dateDiv.style.fontSize = '0.8rem';
-            dateDiv.style.opacity = '0.8';
+            dateDiv.style.top = '6px';
+            dateDiv.style.left = '8px';
+            dateDiv.style.fontSize = '0.9rem';
+            dateDiv.style.fontWeight = 'bold';
+            dateDiv.style.color = 'rgba(255,255,255,0.9)';
+            dateDiv.style.zIndex = '2';
             label.appendChild(dateDiv);
 
-            // Badge inside label
+            // Task Badge (Top Right)
             if (taskNum && employee.category === App.CATEGORIES.PLAYA) {
                 const badge = document.createElement('div');
                 badge.className = 'task-badge-main';
@@ -715,25 +738,26 @@ App.renderCalendarBody = function (employee, state) {
                 badge.style.fontWeight = 'bold';
                 badge.style.border = '2px solid white';
                 badge.style.position = 'absolute';
-                badge.style.top = '-8px';
-                badge.style.right = '-8px';
+                badge.style.top = '6px';
+                badge.style.right = '6px';
                 badge.style.zIndex = '5';
-                badge.style.boxShadow = '0 2px 2px rgba(0,0,0,0.2)';
+                badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                 badge.textContent = taskNum;
                 label.appendChild(badge);
-                label.style.position = 'relative';
-                label.style.overflow = 'visible';
             }
 
             div.appendChild(label);
         } else {
+            div.style.backgroundColor = '#f8f9fa';
+            div.style.border = '1px solid #e9ecef';
+
             const dateDiv = document.createElement('div');
-            dateDiv.className = 'cal-date';
             dateDiv.textContent = d;
             dateDiv.style.position = 'absolute';
-            dateDiv.style.top = '4px';
-            dateDiv.style.right = '4px';
-            dateDiv.style.color = '#ccc';
+            dateDiv.style.top = '6px';
+            dateDiv.style.left = '8px';
+            dateDiv.style.color = '#adb5bd';
+            dateDiv.style.fontWeight = 'bold';
             div.appendChild(dateDiv);
         }
 
