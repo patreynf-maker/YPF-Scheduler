@@ -45,83 +45,77 @@ App.renderOrgSelector = function (container) {
 
     const title = document.createElement('h1');
     title.textContent = 'Planilla de Horarios';
-
-    const adminBtn = document.createElement('button');
-    adminBtn.className = `btn-admin-login ${state.isAdmin ? 'active' : ''}`;
-    adminBtn.innerHTML = state.isAdmin ? '\uD83D\uDD13 Admin Activo' : '\uD83D\uDD12 Acceso Admin';
-    adminBtn.onclick = () => App.toggleAdmin(state);
-
-    headerRow.appendChild(adminBtn);
     headerRow.appendChild(title);
     wrapper.appendChild(headerRow);
 
-    // Add Org Form (Admin Only)
     if (state.isAdmin) {
+        // Admin: show org grid with add/delete controls
         const addOrgForm = document.createElement('div');
         addOrgForm.className = 'add-org-form';
         addOrgForm.innerHTML = `
             <input type="text" id="new-org-name" placeholder="Nueva sucursal..." maxlength="20">
             <button id="btn-add-org">Agregar</button>
         `;
-
         const input = addOrgForm.querySelector('#new-org-name');
-        const btn = addOrgForm.querySelector('#btn-add-org');
-
+        const addBtn = addOrgForm.querySelector('#btn-add-org');
         const handleAdd = () => {
             const name = input.value.trim().toUpperCase();
-            if (name) {
-                App.store.addOrganization(name);
-                input.value = '';
-            }
+            if (name) { App.store.addOrganization(name); input.value = ''; }
         };
-
-        btn.onclick = handleAdd;
+        addBtn.onclick = handleAdd;
         input.onkeypress = (e) => { if (e.key === 'Enter') handleAdd(); };
-
         wrapper.appendChild(addOrgForm);
-    }
 
-    const grid = document.createElement('div');
-    grid.className = 'org-grid';
-
-    // Use dynamic organizations from store
-    const orgs = state.organizations && state.organizations.length > 0
-        ? state.organizations
-        : (App.ORGANIZATIONS || []);
-
-    orgs.forEach(org => {
-        const cardWrapper = document.createElement('div');
-        cardWrapper.className = 'org-card-wrapper';
-
-        const btn = document.createElement('button');
-        btn.className = 'org-card';
-        btn.textContent = org;
-        btn.onclick = () => App.store.setOrg(org);
-        cardWrapper.appendChild(btn);
-
-        if (state.isAdmin) {
+        const grid = document.createElement('div');
+        grid.className = 'org-grid';
+        const orgs = state.organizations && state.organizations.length > 0
+            ? state.organizations : (App.ORGANIZATIONS || []);
+        orgs.forEach(org => {
+            const cardWrapper = document.createElement('div');
+            cardWrapper.className = 'org-card-wrapper';
+            const btn = document.createElement('button');
+            btn.className = 'org-card';
+            btn.textContent = org;
+            btn.onclick = () => App.store.setOrg(org);
+            cardWrapper.appendChild(btn);
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'org-delete-btn';
-            deleteBtn.innerHTML = '\u{00D7}';
+            deleteBtn.innerHTML = '\u00D7';
             deleteBtn.title = `Eliminar ${org}`;
-            deleteBtn.onclick = (e) => {
-                e.stopPropagation();
-                App.store.deleteOrganization(org);
-            };
+            deleteBtn.onclick = (e) => { e.stopPropagation(); App.store.deleteOrganization(org); };
             cardWrapper.appendChild(deleteBtn);
-        }
+            grid.appendChild(cardWrapper);
+        });
+        wrapper.appendChild(grid);
 
-        grid.appendChild(cardWrapper);
-    });
+        // Admin logout button
+        const adminBtn = document.createElement('button');
+        adminBtn.className = 'btn-admin-login active';
+        adminBtn.innerHTML = '\uD83D\uDD13 Salir de Admin';
+        adminBtn.onclick = () => App.toggleAdmin(state);
+        wrapper.appendChild(adminBtn);
+    } else {
+        // Non-admin: only show "Soy Colaborador" + small hidden admin access link
+        const employeeLoginBtn = document.createElement('button');
+        employeeLoginBtn.className = 'btn-employee-login';
+        employeeLoginBtn.innerHTML = '\uD83D\uDC64 Soy Colaborador';
+        employeeLoginBtn.onclick = () => App.renderEmployeeLogin(container);
+        wrapper.appendChild(employeeLoginBtn);
 
-    wrapper.appendChild(grid);
-
-    // Employee Login Button
-    const employeeLoginBtn = document.createElement('button');
-    employeeLoginBtn.className = 'btn-employee-login';
-    employeeLoginBtn.innerHTML = '\uD83D\uDC64 Soy Colaborador';
-    employeeLoginBtn.onclick = () => App.renderEmployeeLogin(container);
-    wrapper.appendChild(employeeLoginBtn);
+        // Discreet admin access link at the bottom
+        const adminLink = document.createElement('div');
+        adminLink.style.marginTop = '40px';
+        adminLink.style.textAlign = 'center';
+        const adminA = document.createElement('a');
+        adminA.href = '#';
+        adminA.textContent = 'Acceso Administrador';
+        adminA.style.fontSize = '0.75rem';
+        adminA.style.color = '#aaa';
+        adminA.style.textDecoration = 'none';
+        adminA.onclick = (e) => { e.preventDefault(); App.toggleAdmin(state); };
+        adminLink.appendChild(adminA);
+        wrapper.appendChild(adminLink);
+    }
 
     container.appendChild(wrapper);
 };
@@ -568,7 +562,7 @@ App.showShiftPickerModal = function (employee, day, options) {
     document.body.appendChild(modal);
 };
 
-/* SHARED CALENDAR RENDERING LOGIC */
+/* SHARED CALENDAR RENDERING LOGIC - V15 */
 App.renderCalendarBody = function (employee, state) {
     const container = document.createElement('div');
     container.className = 'calendar-body-shared';
@@ -576,67 +570,34 @@ App.renderCalendarBody = function (employee, state) {
     // 1. Task Legend (Only for PLAYA)
     if (employee.category === App.CATEGORIES.PLAYA) {
         const taskLegendDiv = document.createElement('div');
-        taskLegendDiv.className = 'calendar-task-legend';
-        taskLegendDiv.style.padding = '15px';
-        taskLegendDiv.style.backgroundColor = '#f8f9fa';
-        taskLegendDiv.style.borderBottom = '1px solid #e9ecef';
-        taskLegendDiv.style.marginBottom = '15px';
-        taskLegendDiv.style.borderRadius = '8px';
+        taskLegendDiv.style.cssText = 'padding:12px 15px; background:#f8f9fa; border-radius:8px; margin-bottom:15px;';
 
         const legendTitle = document.createElement('div');
-        legendTitle.className = 'calendar-task-legend-title';
         legendTitle.textContent = 'Referencias de Tareas';
-        legendTitle.style.fontWeight = 'bold';
-        legendTitle.style.marginBottom = '10px';
-        legendTitle.style.color = '#495057';
-        legendTitle.style.fontSize = '0.95rem';
+        legendTitle.style.cssText = 'font-weight:bold; margin-bottom:8px; color:#495057; font-size:0.9rem;';
+        taskLegendDiv.appendChild(legendTitle);
 
         const legendItems = document.createElement('div');
-        legendItems.className = 'calendar-task-items';
-        legendItems.style.display = 'grid';
-        legendItems.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
-        legendItems.style.gap = '8px';
-
+        legendItems.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px;';
         Object.keys(App.TASKS_PLAYA).forEach(num => {
             const item = document.createElement('div');
-            item.className = 'calendar-task-item';
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.fontSize = '0.85rem';
-            item.style.color = '#495057';
-
-            item.innerHTML = `
-                <div class="task-badge-main" style="background-color: ${App.TASK_COLORS[num]}; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 8px; font-size: 0.75rem; flex-shrink: 0;">${num}</div>
-                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${App.TASKS_PLAYA[num]}</span>
-            `;
+            item.style.cssText = 'display:flex; align-items:center; font-size:0.8rem; color:#495057;';
+            item.innerHTML = `<span style="background:${App.TASK_COLORS[num]}; color:white; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:bold; margin-right:6px; font-size:0.75rem; flex-shrink:0;">${num}</span>${App.TASKS_PLAYA[num]}`;
             legendItems.appendChild(item);
         });
-
-        taskLegendDiv.appendChild(legendTitle);
         taskLegendDiv.appendChild(legendItems);
         container.appendChild(taskLegendDiv);
     }
 
     // 2. Calendar Grid
     const grid = document.createElement('div');
-    grid.className = 'calendar-grid';
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-    grid.style.gap = '8px';
-    grid.style.padding = '10px';
-    grid.style.backgroundColor = '#fff';
+    grid.style.cssText = 'display:grid; grid-template-columns:repeat(7,1fr); gap:4px; padding:5px;';
 
-    const dayNames = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
-    dayNames.forEach(d => {
+    // Day name headers
+    ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'].forEach(d => {
         const div = document.createElement('div');
-        div.className = 'cal-day-name';
         div.textContent = d;
-        div.style.textAlign = 'center';
-        div.style.fontWeight = 'bold';
-        div.style.padding = '10px 0';
-        div.style.color = '#adb5bd';
-        div.style.fontSize = '0.8rem';
-        div.style.letterSpacing = '1px';
+        div.style.cssText = 'text-align:center; font-weight:bold; padding:8px 0; color:#888; font-size:0.7rem; letter-spacing:0.5px;';
         grid.appendChild(div);
     });
 
@@ -645,128 +606,68 @@ App.renderCalendarBody = function (employee, state) {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayIndex = new Date(year, month, 1).getDay();
 
+    // Empty cells before first day
     for (let i = 0; i < firstDayIndex; i++) {
-        const div = document.createElement('div');
-        div.className = 'cal-day-empty';
-        grid.appendChild(div);
+        grid.appendChild(document.createElement('div'));
     }
 
-    // Use 0-indexed month key to match data
     const monthKey = `${year}-${month}`;
-    const empShifts = state.shifts[monthKey]?.[employee.id] || {};
-    const empTasks = state.tasks[monthKey]?.[employee.id] || {};
+    const empShifts = (state.shifts[monthKey] && state.shifts[monthKey][employee.id]) || {};
+    const empTasks = (state.tasks[monthKey] && state.tasks[monthKey][employee.id]) || {};
 
     for (let d = 1; d <= daysInMonth; d++) {
-        const div = document.createElement('div');
-        div.className = 'cal-day-cell';
-        div.style.borderRadius = '8px';
-        div.style.minHeight = '100px';
-        div.style.position = 'relative';
-        div.style.overflow = 'hidden';
-        div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
-        div.style.display = 'flex';
-        div.style.flexDirection = 'column';
+        const cell = document.createElement('div');
+        cell.style.cssText = 'position:relative; border-radius:6px; min-height:70px; overflow:hidden; display:flex; flex-direction:column;';
 
         const shiftCode = empShifts[d];
         const taskNum = empTasks[d];
 
         if (shiftCode) {
+            // Find shift info
             let shiftInfo = null;
-            if (employee.category) {
-                const catKey = employee.category === App.CATEGORIES.PLAYA ? 'PLAYA' : (employee.category === App.CATEGORIES.FULL ? 'FULL' : null);
-                if (catKey && App.SHIFT_TYPES[catKey]) {
-                    shiftInfo = App.SHIFT_TYPES[catKey].find(s => s.code === shiftCode);
-                }
-            }
+            const catKey = employee.category === App.CATEGORIES.PLAYA ? 'PLAYA' : (employee.category === App.CATEGORIES.FULL ? 'FULL' : null);
+            if (catKey && App.SHIFT_TYPES[catKey]) shiftInfo = App.SHIFT_TYPES[catKey].find(s => s.code === shiftCode);
             if (!shiftInfo) shiftInfo = [...(App.SHIFT_TYPES.PLAYA || []), ...(App.SHIFT_TYPES.FULL || [])].find(s => s.code === shiftCode);
 
-            const label = document.createElement('div');
-            label.className = 'cal-shift-label';
-            label.style.flex = '1';
-            label.style.width = '100%';
-            label.style.padding = '8px';
-            label.style.boxSizing = 'border-box';
-            label.style.display = 'flex';
-            label.style.flexDirection = 'column';
-            label.style.justifyContent = 'center';
-            label.style.alignItems = 'center';
+            const bg = shiftInfo ? shiftInfo.color : '#ccc';
+            cell.style.backgroundColor = bg;
 
-            if (shiftInfo) {
-                label.style.backgroundColor = shiftInfo.color;
-                label.style.color = '#fff';
-            } else {
-                label.style.backgroundColor = '#f1f3f5';
-                label.style.color = '#495057';
-                label.textContent = shiftCode;
-            }
+            // Date number — top left
+            const dateEl = document.createElement('div');
+            dateEl.textContent = d;
+            dateEl.style.cssText = 'position:absolute; top:4px; left:5px; font-size:0.75rem; font-weight:bold; color:rgba(255,255,255,0.85); line-height:1;';
+            cell.appendChild(dateEl);
 
-            // Shift Label Text (Center)
-            if (shiftInfo) {
-                const shiftText = document.createElement('span');
-                shiftText.textContent = shiftInfo.label;
-                shiftText.style.fontWeight = 'bold';
-                shiftText.style.fontSize = '1.1rem';
-                shiftText.style.textShadow = '0 1px 2px rgba(0,0,0,0.2)';
-                shiftText.style.textAlign = 'center';
-                label.appendChild(shiftText);
-            }
-
-            // Date Number (Top Left)
-            const dateDiv = document.createElement('div');
-            dateDiv.textContent = d;
-            dateDiv.style.position = 'absolute';
-            dateDiv.style.top = '6px';
-            dateDiv.style.left = '8px';
-            dateDiv.style.fontSize = '0.9rem';
-            dateDiv.style.fontWeight = 'bold';
-            dateDiv.style.color = 'rgba(255,255,255,0.9)';
-            dateDiv.style.zIndex = '2';
-            label.appendChild(dateDiv);
-
-            // Task Badge (Top Right)
+            // Task badge — top right
             if (taskNum && employee.category === App.CATEGORIES.PLAYA) {
                 const badge = document.createElement('div');
-                badge.className = 'task-badge-main';
-                badge.style.backgroundColor = App.TASK_COLORS[taskNum] || '#333';
-                badge.style.color = 'white';
-                badge.style.width = '24px';
-                badge.style.height = '24px';
-                badge.style.borderRadius = '50%';
-                badge.style.display = 'flex';
-                badge.style.alignItems = 'center';
-                badge.style.justifyContent = 'center';
-                badge.style.fontWeight = 'bold';
-                badge.style.border = '2px solid white';
-                badge.style.position = 'absolute';
-                badge.style.top = '6px';
-                badge.style.right = '6px';
-                badge.style.zIndex = '5';
-                badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                 badge.textContent = taskNum;
-                label.appendChild(badge);
+                badge.style.cssText = `position:absolute; top:3px; right:3px; width:18px; height:18px; border-radius:50%; background:${App.TASK_COLORS[taskNum] || '#333'}; color:white; font-size:0.65rem; font-weight:bold; display:flex; align-items:center; justify-content:center; border:1.5px solid white; box-shadow:0 1px 3px rgba(0,0,0,0.3); z-index:2;`;
+                cell.appendChild(badge);
             }
 
-            div.appendChild(label);
+            // Shift label — centered
+            const labelEl = document.createElement('div');
+            labelEl.textContent = shiftInfo ? shiftInfo.label : shiftCode;
+            labelEl.style.cssText = 'flex:1; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:0.85rem; text-align:center; padding:18px 4px 4px; text-shadow:0 1px 2px rgba(0,0,0,0.3); line-height:1.2;';
+            cell.appendChild(labelEl);
         } else {
-            div.style.backgroundColor = '#f8f9fa';
-            div.style.border = '1px solid #e9ecef';
-
-            const dateDiv = document.createElement('div');
-            dateDiv.textContent = d;
-            dateDiv.style.position = 'absolute';
-            dateDiv.style.top = '6px';
-            dateDiv.style.left = '8px';
-            dateDiv.style.color = '#adb5bd';
-            dateDiv.style.fontWeight = 'bold';
-            div.appendChild(dateDiv);
+            // Empty day
+            cell.style.cssText += 'background:#f0f2f5; border:1px solid #e0e3e8;';
+            const dateEl = document.createElement('div');
+            dateEl.textContent = d;
+            dateEl.style.cssText = 'position:absolute; top:4px; left:5px; font-size:0.75rem; font-weight:bold; color:#bbb;';
+            cell.appendChild(dateEl);
         }
 
-        grid.appendChild(div);
+        grid.appendChild(cell);
     }
 
     container.appendChild(grid);
     return container;
 };
+
+
 /* REFACTORED SHOW CALENDAR VIEW */
 App.showCalendarView = function (employee, state) {
     let modal = document.getElementById('calendar-modal');
