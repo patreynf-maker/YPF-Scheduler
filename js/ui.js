@@ -1096,51 +1096,67 @@ App.renderEmployeePortal = function (container, employee) {
     container.appendChild(wrapper);
 };
 
+/* Load html2canvas on-demand (handles CDN not yet ready or blocked) */
+App._loadHtml2Canvas = function (callback) {
+    if (typeof html2canvas !== 'undefined') {
+        callback(null);
+        return;
+    }
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = function () { callback(null); };
+    script.onerror = function () { callback(new Error('No se pudo cargar html2canvas')); };
+    document.head.appendChild(script);
+};
+
 /* Capture the calendar as image and share or download */
 App.shareCalendarImage = function (employee, date) {
     var target = document.getElementById('portal-calendar-capture');
     if (!target) { alert('No se encontró el calendario.'); return; }
-    if (typeof html2canvas === 'undefined') { alert('La librería de captura no está disponible.'); return; }
 
-    // Show loading state on the button
     var btn = document.querySelector('[title="Guardar / compartir imagen del calendario"]');
     if (btn) { btn.innerHTML = '\u23F3'; btn.disabled = true; }
 
     var monthLabel = App.formatMonthYear(date);
     var filename = 'horario_' + employee.name.replace(/\s+/g, '_') + '_' + date.getFullYear() + '-' + (date.getMonth() + 1) + '.png';
 
-    html2canvas(target, {
-        scale: 2,          // retina quality
-        useCORS: true,
-        backgroundColor: '#ffffff'
-    }).then(function (canvas) {
-        canvas.toBlob(function (blob) {
-            // Restore button
+    App._loadHtml2Canvas(function (loadErr) {
+        if (loadErr) {
             if (btn) { btn.innerHTML = '\uD83D\uDCF8'; btn.disabled = false; }
+            alert('No se pudo cargar la librería de captura. Verifica tu conexión a internet.');
+            return;
+        }
 
-            // Try Web Share API (mobile)
-            if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/png' })] })) {
-                var file = new File([blob], filename, { type: 'image/png' });
-                navigator.share({
-                    title: 'Horario ' + employee.name + ' — ' + monthLabel,
-                    files: [file]
-                }).catch(function () {
-                    // User cancelled — no action needed
-                });
-            } else {
-                // Fallback: download
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(function () { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
-            }
-        }, 'image/png');
-    }).catch(function (err) {
-        if (btn) { btn.innerHTML = '\uD83D\uDCF8'; btn.disabled = false; }
-        alert('Error al capturar el calendario: ' + err.message);
+        html2canvas(target, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        }).then(function (canvas) {
+            canvas.toBlob(function (blob) {
+                if (btn) { btn.innerHTML = '\uD83D\uDCF8'; btn.disabled = false; }
+
+                // Web Share API (mobile — Android/iOS)
+                if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/png' })] })) {
+                    var file = new File([blob], filename, { type: 'image/png' });
+                    navigator.share({
+                        title: 'Horario ' + employee.name + ' \u2014 ' + monthLabel,
+                        files: [file]
+                    }).catch(function () { /* user cancelled */ });
+                } else {
+                    // Fallback: download
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(function () { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+                }
+            }, 'image/png');
+        }).catch(function (err) {
+            if (btn) { btn.innerHTML = '\uD83D\uDCF8'; btn.disabled = false; }
+            alert('Error al capturar el calendario: ' + err.message);
+        });
     });
 };
 
