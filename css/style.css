@@ -195,6 +195,30 @@
     transform: translateY(-2px);
 }
 
+.btn-employee-login {
+    background: #27ae60;
+    border: none;
+    color: #fff;
+    padding: var(--spacing-lg) 48px;
+    font-size: 1.8rem;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-md);
+    min-width: 180px;
+}
+
+.btn-employee-login:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    background: #1e8449;
+}
+
+.btn-employee-login:active {
+    transform: translateY(-2px);
+}
+
 /* Header */
 .app-header {
     background: var(--ypf-header-blue);

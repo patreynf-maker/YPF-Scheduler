@@ -1035,7 +1035,7 @@ App.renderEmployeeLogin = function (container) {
 
 /* REFACTORED PORTAL RENDERER */
 App.renderEmployeePortal = function (container, employee) {
-    container.innerHTML = ''; // Clear container
+    container.innerHTML = '';
 
     var wrapper = document.createElement('div');
     wrapper.className = 'employee-portal';
@@ -1046,52 +1046,102 @@ App.renderEmployeePortal = function (container, employee) {
     // Header
     var header = document.createElement('header');
     header.className = 'portal-header';
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'center';
-    header.style.marginBottom = '20px';
-    header.innerHTML = '<div class=\'user-info\'><h2>Hola, ' + employee.name + '</h2><span style="color:#666;">' + employee.organization + '</span></div><div class=\'portal-controls\'><button id=\'btn-portal-share\' title=\'Compartir por WhatsApp\' style="margin-right:10px; padding: 5px 10px; cursor:pointer;">\uD83D\uDCE8</button><button id=\'btn-portal-logout\' style="padding: 5px 10px; cursor:pointer;">Salir</button></div>';
+    header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;';
 
-    header.querySelector('#btn-portal-share').onclick = function () {
-        var url = App.generateWhatsAppLink(employee, App.store.state.currentDate, App.store.state.shifts);
-        window.open(url, '_blank');
+    var userInfo = document.createElement('div');
+    userInfo.innerHTML = '<h2 style="margin:0;">Hola, ' + employee.name + '</h2><span style="color:#666; font-size:0.9rem;">' + employee.organization + '</span>';
+    header.appendChild(userInfo);
+
+    var controls = document.createElement('div');
+    controls.style.cssText = 'display:flex; gap:8px; align-items:center;';
+
+    // Image share button
+    var shareImgBtn = document.createElement('button');
+    shareImgBtn.title = 'Guardar / compartir imagen del calendario';
+    shareImgBtn.innerHTML = '\uD83D\uDCF8';
+    shareImgBtn.style.cssText = 'padding:8px 12px; cursor:pointer; border-radius:6px; border:1px solid #ddd; background:#007bff; color:white; font-size:1rem;';
+    shareImgBtn.onclick = function () {
+        App.shareCalendarImage(employee, App.store.state.currentDate);
     };
+    controls.appendChild(shareImgBtn);
 
-    header.querySelector('#btn-portal-logout').onclick = function () {
+    // Logout button
+    var logoutBtn = document.createElement('button');
+    logoutBtn.textContent = 'Salir';
+    logoutBtn.style.cssText = 'padding:8px 12px; cursor:pointer; border-radius:6px; border:1px solid #ddd; background:#f8f9fa;';
+    logoutBtn.onclick = function () {
         App.store.state.isPortalMode = false;
         App.store.state.portalEmployee = null;
         window.location.reload();
     };
+    controls.appendChild(logoutBtn);
 
+    header.appendChild(controls);
     wrapper.appendChild(header);
 
     // Month Nav
     var nav = document.createElement('div');
-    nav.className = 'month-nav portal-nav';
-    nav.style.display = 'flex';
-    nav.style.justifyContent = 'center';
-    nav.style.alignItems = 'center';
-    nav.style.margin = '20px 0';
-    nav.innerHTML = '<button id=\'btn-prev-month\' style="padding:5px 15px; cursor:pointer;">&lt;</button><span class=\'date-display\' style="margin:0 15px; font-weight:bold; font-size:1.1rem;">' + App.formatMonthYear(App.store.state.currentDate) + '</span><button id=\'btn-next-month\' style="padding:5px 15px; cursor:pointer;">&gt;</button>';
-
+    nav.style.cssText = 'display:flex; justify-content:center; align-items:center; margin:20px 0;';
+    nav.innerHTML = '<button id="btn-prev-month" style="padding:5px 15px; cursor:pointer;">&lt;</button><span id="portal-month-label" style="margin:0 15px; font-weight:bold; font-size:1.1rem;">' + App.formatMonthYear(App.store.state.currentDate) + '</span><button id="btn-next-month" style="padding:5px 15px; cursor:pointer;">&gt;</button>';
     nav.querySelector('#btn-prev-month').onclick = function () { App.changeMonth(-1); };
     nav.querySelector('#btn-next-month').onclick = function () { App.changeMonth(1); };
-
     wrapper.appendChild(nav);
 
-    // Calendar Request via Shared Logic
+    // Calendar — give it a stable id for html2canvas targeting
     var calContainer = document.createElement('div');
-    calContainer.className = 'portal-calendar-wrapper';
-    calContainer.style.backgroundColor = 'white';
-    calContainer.style.padding = '15px';
-    calContainer.style.borderRadius = '8px';
-    calContainer.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-
-    // Append the shared body
+    calContainer.id = 'portal-calendar-capture';
+    calContainer.style.cssText = 'background:white; padding:15px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1);';
     calContainer.appendChild(App.renderCalendarBody(employee, App.store.state));
-
     wrapper.appendChild(calContainer);
     container.appendChild(wrapper);
+};
+
+/* Capture the calendar as image and share or download */
+App.shareCalendarImage = function (employee, date) {
+    var target = document.getElementById('portal-calendar-capture');
+    if (!target) { alert('No se encontró el calendario.'); return; }
+    if (typeof html2canvas === 'undefined') { alert('La librería de captura no está disponible.'); return; }
+
+    // Show loading state on the button
+    var btn = document.querySelector('[title="Guardar / compartir imagen del calendario"]');
+    if (btn) { btn.innerHTML = '\u23F3'; btn.disabled = true; }
+
+    var monthLabel = App.formatMonthYear(date);
+    var filename = 'horario_' + employee.name.replace(/\s+/g, '_') + '_' + date.getFullYear() + '-' + (date.getMonth() + 1) + '.png';
+
+    html2canvas(target, {
+        scale: 2,          // retina quality
+        useCORS: true,
+        backgroundColor: '#ffffff'
+    }).then(function (canvas) {
+        canvas.toBlob(function (blob) {
+            // Restore button
+            if (btn) { btn.innerHTML = '\uD83D\uDCF8'; btn.disabled = false; }
+
+            // Try Web Share API (mobile)
+            if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/png' })] })) {
+                var file = new File([blob], filename, { type: 'image/png' });
+                navigator.share({
+                    title: 'Horario ' + employee.name + ' — ' + monthLabel,
+                    files: [file]
+                }).catch(function () {
+                    // User cancelled — no action needed
+                });
+            } else {
+                // Fallback: download
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function () { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+            }
+        }, 'image/png');
+    }).catch(function (err) {
+        if (btn) { btn.innerHTML = '\uD83D\uDCF8'; btn.disabled = false; }
+        alert('Error al capturar el calendario: ' + err.message);
+    });
 };
 
 App.exportDashboardToCSV = function (org, currentDate) {
