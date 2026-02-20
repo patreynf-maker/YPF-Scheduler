@@ -206,7 +206,6 @@
     border-radius: var(--radius-md);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow-md);
-    min-width: 180px;
 }
 
 .btn-employee-login:hover {
