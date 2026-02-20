@@ -54,10 +54,10 @@ App.predictNextMonthShifts = function (empId, year, month, allShifts) {
     }
 
     if (empShifts[daysInMonth] === 'FRANCO') {
-        return {}; // No propagation if month ends in Franco (standard behavior)
+        return {}; // No propagation if month ends in Franco
     }
 
-    // 1. Calculate consecutive work days at the end of the month
+    // 1. Calculate consecutive work days (streak) at the end of the month
     let consecutiveWorkDays = 0;
     for (let d = daysInMonth; d >= 1; d--) {
         if (empShifts[d] !== 'FRANCO') {
@@ -67,72 +67,69 @@ App.predictNextMonthShifts = function (empId, year, month, allShifts) {
         }
     }
 
-    // 2. Analyze pattern in the last 7 days
-    const last7Days = [];
-    for (let d = Math.max(1, daysInMonth - 6); d <= daysInMonth; d++) {
-        if (empShifts[d]) last7Days.push({ day: d, code: empShifts[d] });
+    // 2. Analyze pattern over the last 14 days
+    const windowDays = [];
+    for (let d = Math.max(1, daysInMonth - 13); d <= daysInMonth; d++) {
+        if (empShifts[d]) {
+            windowDays.push({ code: empShifts[d] });
+        }
     }
 
-    if (last7Days.length === 0) return {};
+    if (windowDays.length === 0) return {};
 
-    // 3. Detect current work block (streak) pattern
-    // Find when the current work block started
-    let blockStartIndex = -1;
-    for (let i = last7Days.length - 1; i >= 0; i--) {
-        if (last7Days[i].code === 'FRANCO') break;
-        blockStartIndex = i;
-    }
+    // 3. Extract work blocks (group consecutive identical shifts, ignoring Francos)
+    const workBlocks = [];
+    let currentBlock = null;
+    windowDays.forEach(day => {
+        if (day.code === 'FRANCO') {
+            currentBlock = null; // Reset block on Franco
+            return;
+        }
+        if (!currentBlock || currentBlock.code !== day.code) {
+            currentBlock = { code: day.code, count: 1 };
+            workBlocks.push(currentBlock);
+        } else {
+            currentBlock.count++;
+        }
+    });
 
-    const currentBlock = last7Days.slice(blockStartIndex);
-    const uniqueCodesInBlock = [...new Set(currentBlock.map(b => b.code))];
+    if (workBlocks.length === 0) return {};
 
-    // 4. Prediction Logic
+    // 4. Identify rotation sequence and block size
+    // Sequence: the order of unique shifts found in the blocks
+    const rotationSequence = [];
+    workBlocks.forEach(b => {
+        if (!rotationSequence.includes(b.code)) rotationSequence.push(b.code);
+    });
+
+    // rotationSize: find the most frequent block length (e.g., if blocks are 3, 3, 2, we pick 3)
+    const counts = workBlocks.map(b => b.count);
+    const rotationSize = counts.sort((a, b) =>
+        counts.filter(v => v === a).length - counts.filter(v => v === b).length
+    ).pop() || 1;
+
+    // 5. Prediction Logic
     const nextShifts = {};
     const remainingToFranco = 6 - consecutiveWorkDays;
 
-    if (uniqueCodesInBlock.length === 1) {
-        // Simple case: same shift code for the whole current streak
-        const shiftCode = uniqueCodesInBlock[0];
-        for (let i = 1; i <= remainingToFranco; i++) {
-            nextShifts[i] = shiftCode;
+    // Start predicting from current state
+    const lastBlock = workBlocks[workBlocks.length - 1];
+    let currentShiftCode = lastBlock.code;
+    let daysSpentInBlock = lastBlock.count;
+    let seqIndex = rotationSequence.indexOf(currentShiftCode);
+
+    for (let i = 1; i <= remainingToFranco; i++) {
+        // If we reached the rotation size, move to the next shift in sequence
+        if (daysSpentInBlock >= rotationSize && rotationSequence.length > 1) {
+            seqIndex = (seqIndex + 1) % rotationSequence.length;
+            currentShiftCode = rotationSequence[seqIndex];
+            daysSpentInBlock = 0;
         }
-    } else {
-        // Complex case: detect rotation (e.g., 14-22, 14-22, 22-06, 22-06)
-        // Find block size of each shift
-        const blocks = [];
-        let current = currentBlock[0].code;
-        let count = 0;
-        currentBlock.forEach(b => {
-            if (b.code === current) {
-                count++;
-            } else {
-                blocks.push({ code: current, count: count });
-                current = b.code;
-                count = 1;
-            }
-        });
-        blocks.push({ code: current, count: count });
-
-        // Identify most common block size in the last week (2 or 3 usually)
-        const rotationSize = blocks[0].count; // Default to first block size
-        const lastBlock = blocks[blocks.length - 1];
-
-        let currentShiftCode = lastBlock.code;
-        let daysSpentInCurrentBlock = lastBlock.count;
-        let rotationIndex = uniqueCodesInBlock.indexOf(currentShiftCode);
-
-        for (let i = 1; i <= remainingToFranco; i++) {
-            if (daysSpentInCurrentBlock >= rotationSize) {
-                rotationIndex = (rotationIndex + 1) % uniqueCodesInBlock.length;
-                currentShiftCode = uniqueCodesInBlock[rotationIndex];
-                daysSpentInCurrentBlock = 0;
-            }
-            nextShifts[i] = currentShiftCode;
-            daysSpentInCurrentBlock++;
-        }
+        nextShifts[i] = currentShiftCode;
+        daysSpentInBlock++;
     }
 
-    // 5. Mandatory Franco after the streak
+    // 6. Mandatory Franco after the streak
     if (remainingToFranco >= 0) {
         nextShifts[remainingToFranco + 1] = 'FRANCO';
     }
