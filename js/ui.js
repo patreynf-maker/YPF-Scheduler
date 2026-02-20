@@ -966,71 +966,144 @@ App.showDashboard = function (org, currentDate) {
 };
 
 App.renderEmployeeLogin = function (container) {
-    var wrapper = document.createElement('div');
-    wrapper.className = 'login-container';
-    wrapper.innerHTML = '<h2>Acceso Colaborador</h2><div class=\'form-group\'><select id=\'login-org-select\'><option value=\'\'>Selecciona tu Sucursal</option></select></div><div class=\'form-group\'><select id=\'login-emp-select\' disabled><option value=\'\'>Selecciona tu Nombre</option></select></div><div class=\'form-group\'><input type=\'password\' id=\'login-pin\' placeholder=\'PIN (4 d\u00EDgitos)\' maxlength=\'4\' disabled></div><button id=\'btn-login-enter\' disabled>Ingresar</button><button id=\'btn-login-back\'>Volver</button>';
+    const state = {
+        step: 'org', // 'org', 'employee', 'pin'
+        selectedOrg: null,
+        selectedEmployee: null
+    };
 
-    var orgSelect = wrapper.querySelector('#login-org-select');
-    var empSelect = wrapper.querySelector('#login-emp-select');
-    var pinInput = wrapper.querySelector('#login-pin');
-    var loginBtn = wrapper.querySelector('#btn-login-enter');
-    var backBtn = wrapper.querySelector('#btn-login-back');
+    const render = () => {
+        container.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'login-container';
+        wrapper.style.cssText = 'max-width:500px; margin:40px auto; padding:20px; text-align:center;';
 
-    var orgs = App.store.state.organizations || [];
-    orgs.forEach(function (org) {
-        var opt = document.createElement('option');
-        opt.value = org;
-        opt.textContent = org;
-        orgSelect.appendChild(opt);
-    });
+        const title = document.createElement('h2');
+        title.style.marginBottom = '24px';
 
-    orgSelect.onchange = function () {
-        empSelect.innerHTML = '<option value=\'\'>Selecciona tu Nombre</option>';
-        if (orgSelect.value) {
-            var emps = App.store.getEmployeesByOrg(orgSelect.value);
-            emps.forEach(function (emp) {
-                var opt = document.createElement('option');
-                opt.value = emp.id;
-                opt.textContent = emp.name;
-                empSelect.appendChild(opt);
+        const content = document.createElement('div');
+        content.style.display = 'flex';
+        content.style.flexDirection = 'column';
+        content.style.gap = '12px';
+
+        if (state.step === 'org') {
+            title.textContent = 'Selecciona tu Sucursal';
+            const orgs = App.store.state.organizations || [];
+            orgs.forEach(org => {
+                const btn = document.createElement('button');
+                btn.className = 'org-card'; // Reuse existing styles
+                btn.style.cssText = 'width:100%; padding:20px; font-size:1.2rem;';
+                btn.textContent = org;
+                btn.onclick = () => {
+                    state.selectedOrg = org;
+                    state.step = 'employee';
+                    render();
+                };
+                content.appendChild(btn);
             });
-            empSelect.disabled = false;
-        } else {
-            empSelect.disabled = true;
-            pinInput.disabled = true;
+        } else if (state.step === 'employee') {
+            title.textContent = 'Selecciona tu Nombre';
+            const emps = App.store.getEmployeesByOrg(state.selectedOrg);
+
+            // Group and Sort
+            const groups = {
+                [App.CATEGORIES.PLAYA]: [],
+                [App.CATEGORIES.FULL]: [],
+                'OTROS': []
+            };
+
+            emps.forEach(emp => {
+                if (emp.category === App.CATEGORIES.PLAYA) groups[App.CATEGORIES.PLAYA].push(emp);
+                else if (emp.category === App.CATEGORIES.FULL) groups[App.CATEGORIES.FULL].push(emp);
+                else groups['OTROS'].push(emp);
+            });
+
+            const renderGroup = (label, list) => {
+                if (list.length === 0) return;
+                const header = document.createElement('h3');
+                header.textContent = label;
+                header.style.cssText = 'margin-top:20px; margin-bottom:10px; font-size:1rem; color:#666; text-transform:uppercase;';
+                content.appendChild(header);
+
+                list.sort((a, b) => a.name.localeCompare(b.name)).forEach(emp => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-employee-login'; // Reuse existing styles
+                    btn.style.cssText = 'width:100%; padding:15px; font-size:1.1rem; margin-bottom:8px;';
+                    btn.textContent = emp.name;
+                    btn.onclick = () => {
+                        state.selectedEmployee = emp;
+                        state.step = 'pin';
+                        render();
+                    };
+                    content.appendChild(btn);
+                });
+            };
+
+            renderGroup('Playa', groups[App.CATEGORIES.PLAYA]);
+            renderGroup('Full', groups[App.CATEGORIES.FULL]);
+            renderGroup('Otros', groups['OTROS']);
+        } else if (state.step === 'pin') {
+            title.textContent = 'Ingresa tu PIN';
+            const info = document.createElement('p');
+            info.textContent = state.selectedEmployee.name;
+            info.style.marginBottom = '20px';
+            info.style.fontWeight = 'bold';
+            content.appendChild(info);
+
+            const pinInput = document.createElement('input');
+            pinInput.type = 'password';
+            pinInput.inputMode = 'numeric'; // Triggers numeric keyboard on mobile
+            pinInput.pattern = '[0-9]*';
+            pinInput.maxLength = 4;
+            pinInput.style.cssText = 'font-size:2rem; text-align:center; padding:15px; border-radius:10px; border:2px solid #ddd; width:100%; margin-bottom:20px;';
+            pinInput.placeholder = '••••';
+            content.appendChild(pinInput);
+
+            const loginBtn = document.createElement('button');
+            loginBtn.textContent = 'Ingresar';
+            loginBtn.className = 'btn-employee-login';
+            loginBtn.style.width = '100%';
+            loginBtn.onclick = () => {
+                if (App.store.validateEmployeePin(state.selectedEmployee.id, pinInput.value)) {
+                    App.store.state.isPortalMode = true;
+                    App.store.state.portalEmployee = state.selectedEmployee;
+                    App.store.emitChange();
+                } else {
+                    alert('PIN Incorrecto');
+                    pinInput.value = '';
+                    pinInput.focus();
+                }
+            };
+            content.appendChild(loginBtn);
+
+            setTimeout(() => pinInput.focus(), 100);
         }
+
+        // Back Button
+        const backBtn = document.createElement('button');
+        backBtn.textContent = state.step === 'org' ? 'Volver al Inicio' : 'atrás';
+        backBtn.style.cssText = 'margin-top:30px; background:none; border:none; color:#666; text-decoration:underline; cursor:pointer;';
+        backBtn.onclick = () => {
+            if (state.step === 'org') {
+                App.store.state.isPortalMode = false;
+                App.store.state.portalEmployee = null;
+                App.store.emitChange();
+            } else if (state.step === 'employee') {
+                state.step = 'org';
+                render();
+            } else if (state.step === 'pin') {
+                state.step = 'employee';
+                render();
+            }
+        };
+
+        wrapper.appendChild(title);
+        wrapper.appendChild(content);
+        wrapper.appendChild(backBtn);
+        container.appendChild(wrapper);
     };
 
-    empSelect.onchange = function () {
-        pinInput.disabled = !empSelect.value;
-        if (empSelect.value) pinInput.focus();
-    };
-
-    pinInput.oninput = function () {
-        loginBtn.disabled = pinInput.value.length < 4;
-    };
-
-    loginBtn.onclick = function () {
-        var empId = empSelect.value;
-        var pin = pinInput.value;
-        if (App.store.validateEmployeePin(empId, pin)) {
-            var emp = App.store.state.employees.find(function (e) { return e.id == empId; });
-            App.store.state.isPortalMode = true;
-            App.store.state.portalEmployee = emp;
-            App.store.emitChange();
-        } else {
-            alert('PIN Incorrecto');
-        }
-    };
-
-    backBtn.onclick = function () {
-        App.store.state.isPortalMode = false;
-        App.store.state.portalEmployee = null;
-        App.store.emitChange();
-    };
-
-    container.innerHTML = '';
-    container.appendChild(wrapper);
+    render();
 };
 
 /* REFACTORED PORTAL RENDERER */
