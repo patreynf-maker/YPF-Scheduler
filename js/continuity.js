@@ -4,7 +4,7 @@ window.App = window.App || {};
  * Checks if the specified month is complete for all employees in the current organization.
  */
 App.isMonthCompleteForOrg = function (employees, year, month, allShifts) {
-    const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const monthKey = App.getMonthKey(new Date(year, month, 1));
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const monthlyShifts = allShifts[monthKey];
 
@@ -44,7 +44,7 @@ App.isMonthCompleteForOrg = function (employees, year, month, allShifts) {
  * Predicts shifts for the start of the next month for a specific employee.
  */
 App.predictNextMonthShifts = function (empId, year, month, allShifts) {
-    const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const monthKey = App.getMonthKey(new Date(year, month, 1));
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const monthlyShifts = allShifts[monthKey];
     const empShifts = monthlyShifts[empId];

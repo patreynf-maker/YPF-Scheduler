@@ -46,13 +46,13 @@ App.store = {
                 totalHours += shiftDef.duration;
 
                 // Track Sundays
-                const date = new Date(year, month - 1, parseInt(day));
+                const date = new Date(year, month, parseInt(day));
                 if (date.getDay() === 0 && code !== 'FRANCO') {
                     sundaysWorked++;
                 }
 
                 // Track Holidays
-                const fullDateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const fullDateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 if (App.HOLIDAYS[fullDateKey] && code !== 'FRANCO') {
                     holidaysWorked++;
                 }
@@ -486,14 +486,14 @@ App.initStore = function () {
 
                 const maxId = App.store.state.employees.reduce((max, e) => Math.max(max, e.id), 499);
                 App.store.state.nextEmployeeId = Math.max(data.nextEmployeeId || 500, maxId + 1);
-                
+
                 // PIN Migration: Assign default PIN to employees without one
                 App.store.state.employees.forEach(emp => {
                     if (!emp.pin) {
                         emp.pin = '0000';
                     }
                 });
-                
+
                 App.store.state.isLoaded = true;
                 App.store.listeners.forEach(l => l(App.store.state));
             } else {

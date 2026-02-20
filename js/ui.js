@@ -944,7 +944,7 @@ App.showEditEmployee = function (employee, currentOrg, listContainer) {
 };
 
 App.showDashboard = function (org, currentDate) {
-    var monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
+    var monthKey = App.getMonthKey(currentDate);
     var employees = App.store.getEmployeesByOrg(org);
 
     var modal = document.createElement('div');
@@ -1234,7 +1234,7 @@ App.shareCalendarImage = function (employee, date) {
 };
 
 App.exportDashboardToCSV = function (org, currentDate) {
-    var monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth() + 1).padStart(2, '0');
+    var monthKey = App.getMonthKey(currentDate);
     var employees = App.store.getEmployeesByOrg(org);
 
     var csvContent = 'Colaborador,Horas Totales,Domingos Trabajados,Feriados Trabajados\n';

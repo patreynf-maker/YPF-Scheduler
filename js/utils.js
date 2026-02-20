@@ -23,7 +23,7 @@ App.formatMonthYear = function (date) {
 };
 
 App.getMonthKey = function (date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    return `${date.getFullYear()}-${date.getMonth()}`;
 };
 
 App.generateWhatsAppLink = function (employee, date, shifts) {
