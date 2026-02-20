@@ -114,8 +114,6 @@ App.predictNextMonthShifts = function (empId, year, month, allShifts) {
     // Propagate until first FRANCO
     const remainingToFranco = 6 - consecutiveWorkDays;
 
-    if (remainingToFranco <= 0) return {}; // Should have been Franco already
-
     // Fill work days
     for (let i = 1; i <= remainingToFranco; i++) {
         // If we exhausted the block for this shift, move to next
