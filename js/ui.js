@@ -10,11 +10,18 @@ App.renderApp = function () {
     App.render(app, App.store.state);
 };
 
+// Track last rendered month key to detect changes
+App._lastRenderedMonth = null;
+
 App.render = function (container, state) {
+    const currentMonthKey = App.getMonthKey(state.currentDate);
+    const monthChanged = App._lastRenderedMonth !== currentMonthKey;
+    App._lastRenderedMonth = currentMonthKey;
+
     // Save scroll position of the grid if it exists
     const grid = container.querySelector('.grid-container');
-    const scrollLeft = grid ? grid.scrollLeft : 0;
-    const scrollTop = grid ? grid.scrollTop : 0;
+    const scrollLeft = (grid && !monthChanged) ? grid.scrollLeft : 0;
+    const scrollTop = (grid && !monthChanged) ? grid.scrollTop : 0;
 
     container.innerHTML = '';
 
@@ -1025,18 +1032,22 @@ App.renderEmployeeLogin = function (container) {
                 header.style.cssText = 'margin-top:20px; margin-bottom:10px; font-size:1rem; color:#666; text-transform:uppercase;';
                 content.appendChild(header);
 
+                const grid = document.createElement('div');
+                grid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:10px;';
+
                 list.sort((a, b) => a.name.localeCompare(b.name)).forEach(emp => {
                     const btn = document.createElement('button');
                     btn.className = 'btn-employee-login'; // Reuse existing styles
-                    btn.style.cssText = 'width:100%; padding:15px; font-size:1.1rem; margin-bottom:8px;';
+                    btn.style.cssText = 'width:100%; padding:15px; font-size:1rem; margin:0;'; // Removed margin bottom, using grid gap
                     btn.textContent = emp.name;
                     btn.onclick = () => {
                         state.selectedEmployee = emp;
                         state.step = 'pin';
                         render();
                     };
-                    content.appendChild(btn);
+                    grid.appendChild(btn);
                 });
+                content.appendChild(grid);
             };
 
             renderGroup('Playa', groups[App.CATEGORIES.PLAYA]);
