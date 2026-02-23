@@ -1,7 +1,7 @@
 // Initialize Global Namespace
 window.App = window.App || {};
 
-App.ADMIN_PASSWORD = "6rup00c74n0";
+App.ADMIN_PASSWORD = typeof ADMIN_PASSWORD_CONFIG !== 'undefined' ? ADMIN_PASSWORD_CONFIG : "ADMIN_MIGRATION_PENDING";
 
 App.ORGANIZATIONS = ['QQN', 'CR88', 'VR'];
 
